@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Egyup Cloud System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Egyup Cloud System - V2.5 Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -329,36 +329,80 @@
         .bg-success-soft { background-color: var(--success-soft); color: var(--success); }
         .bg-danger-soft { background-color: var(--danger-soft); color: var(--danger); }
         .bg-warning-soft { background-color: var(--warning-soft); color: var(--warning); }
+        
+        /* مؤشرات الصلاحيات والمشاهدة */
+        .badge-role {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+        .write-action {
+            transition: all 0.2s ease;
+        }
+        .role-restricted {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
     </style>
 </head>
 <body>
+
+    <!-- سكريبت التهيئة العالمية المسبقة لتجنب أخطاء التعريف المرجعية -->
+    <script>
+        window.appData = {
+            installments: [],
+            recurring: [],
+            cards: [],
+            income: [],
+            savings: [],
+            scheduledDebts: [],
+            goals: [],
+            memo: ''
+        };
+        window.workspaceMeta = {
+            name: "Egyup Cloud System",
+            currency: "ج",
+            alertDays: 3,
+            emergencyMonths: 6,
+            maxDti: 40,
+            members: []
+        };
+        window.userRole = 'Owner'; // القيمة الافتراضية حماية للبيانات
+
+        // تعريف مسبق كـ Stub لمنع حدوث ReferenceError قبل تحميل Firebase
+        window.applyPermissionsUI = window.applyPermissionsUI || function() {
+            console.log("[System] جاري تهيئة نظام الصلاحيات...");
+        };
+    </script>
 
     <div id="mainApp" class="container my-4">
         <div class="marquee-container">
             <div class="marquee-content">الله أكبر • الحمد لله • سبحان الله وبحمده • لا إله إلا الله • اللهم صلِّ وسلم على نبينا محمد ﷺ • لا حول ولا قوة إلا بالله</div>
         </div>
         
-        <!-- الهيدر المطور مع تفاصيل الاتصال السحابي -->
+        <!-- الهيدر المطور مع تفاصيل الاتصال السحابي والصلاحيات -->
         <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-body-tertiary rounded-3 shadow-sm flex-wrap gap-3" style="background:var(--card-bg);">
             <div class="d-flex align-items-center gap-3">
                 <img src="https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png" alt="EgyUp Logo" class="app-logo">
                 <div>
-                    <h2 class="mb-0 fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Egyup Cloud System</h2>
+                    <h2 class="mb-0 fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;" id="workspaceTitleDisplay">Egyup Cloud System</h2>
                     <div id="userConnectionStatus" class="mt-1 d-flex align-items-center gap-2 flex-wrap">
                         <span class="badge bg-warning-soft text-warning p-2">
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span> جاري تهيئة الاتصال السحابي...
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span> جاري تهيئة الاتصال السحابي الآمن...
                         </span>
                     </div>
                 </div>
             </div>
             
             <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span id="roleIndicator" class="badge bg-info-soft text-info badge-role"><i class="bi bi-shield-lock-fill"></i> جاري التحقق من الصلاحية...</span>
                 <span id="syncIndicator" class="badge bg-body-secondary py-2 px-3 small text-success fw-bold" style="border-radius: 20px;">
                     <i class="bi bi-cloud-arrow-up-fill"></i> السحابة محدثة
                 </span>
                 <span id="liveDateTime" class="badge py-2 px-3 small d-none d-lg-inline-block" style="background:var(--bg-secondary);color:var(--text-secondary);border-radius:20px;"></span>
                 
-                <!-- زر التنبيهات المحدث -->
                 <button class="btn btn-outline-secondary rounded-circle p-2 position-relative" id="notificationBtn" onclick="requestNotificationPermission()" title="تفعيل التنبيهات" style="width:40px;height:40px;">
                     <i class="bi bi-bell-fill"></i>
                     <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
@@ -379,22 +423,43 @@
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#scheduledDebtsTab" type="button" role="tab"><i class="bi bi-calendar-x"></i> ديون مجدولة</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#goalsTab" type="button" role="tab"><i class="bi bi-check2-square"></i> أهدافي</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#memoTab" type="button" role="tab"><i class="bi bi-pencil-square"></i> مذكرات</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#settingsTab" type="button" role="tab"><i class="bi bi-gear-fill"></i> الإعدادات المتقدمة</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tipsTab" type="button" role="tab"><i class="bi bi-lightbulb-fill"></i> نصائح ذهبية</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#aboutTab" type="button" role="tab"><i class="bi bi-info-circle-fill"></i> من نحن وتواصل</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#aboutTab" type="button" role="tab"><i class="bi bi-info-circle-fill"></i> تواصل معنا</button></li>
         </ul>
 
         <div class="tab-content">
             <!-- dashboardTab -->
             <div class="tab-pane fade show active" id="dashboardTab" role="tabpanel">
                 <div id="todayAlertBox"></div>
+                
                 <div class="alert alert-success d-flex align-items-center gap-2 mb-3 py-2" style="border-radius: var(--radius-lg);">
                     <i class="bi bi-cloud-check-fill" style="font-size:1.5rem;"></i>
-                    <span><strong>مزامنة سحابية نشطة:</strong> يتم حفظ ومزامنة بياناتك تلقائيًا على السيرفر الخارجي بأمان وسرية تامة!</span>
+                    <span><strong>مزامنة آمنة نشطة:</strong> يتم حفظ بياناتك سحابياً ولحظياً وفق دورك البرمجي المعتمد.</span>
                 </div>
+
+                <!-- لوحة الصحة المالية الذكية المضافة حديثاً -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <div class="glass-card bg-primary-subtle border-primary-subtle" style="border-right: 6px solid var(--accent);">
+                            <h5 class="fw-bold mb-2"><i class="bi bi-heart-pulse-fill text-danger animate-pulse"></i> المحلل المالي الذكي (EgyUp Diagnostic)</h5>
+                            <div class="row g-2 text-start" id="financeDiagnosticContent">
+                                <div class="col-12 text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> جاري حساب المؤشرات المالية الشاملة...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div class="btn-group"><button class="btn btn-sm btn-primary active" id="btnMonthly" onclick="changeDashboardView('monthly')"><i class="bi bi-calendar3"></i> عرض شهري</button><button class="btn btn-sm btn-outline-primary" id="btnYearly" onclick="changeDashboardView('yearly')"><i class="bi bi-calendar-range"></i> عرض سنوي</button></div>
-                    <div class="d-flex gap-1"><button class="btn btn-outline-dark btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> طباعة / PDF</button><button class="btn btn-outline-secondary btn-sm" onclick="exportDataJSON()"><i class="bi bi-download"></i> تصدير نسخة احتياطية</button><button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('fileImporter').click()"><i class="bi bi-upload"></i> استيراد ملف</button><input type="file" id="fileImporter" accept=".json" style="display:none" onchange="importDataJSON(event)"></div>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-outline-dark btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> طباعة / PDF</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="exportDataJSON()"><i class="bi bi-download"></i> تصدير نسخة احتياطية</button>
+                        <button class="btn btn-outline-secondary btn-sm write-action" onclick="document.getElementById('fileImporter').click()"><i class="bi bi-upload"></i> استيراد ملف</button>
+                        <input type="file" id="fileImporter" accept=".json" style="display:none" onchange="importDataJSON(event)">
+                    </div>
                 </div>
+                
                 <div class="row g-2 mb-4 align-items-end" id="monthSelector">
                     <div class="col-5"><label class="small fw-bold form-label">الشهر</label><select id="filterMonth" class="form-select" onchange="calculateFinanceReport()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
                     <div class="col-5"><label class="small fw-bold form-label">السنة</label><input type="number" id="filterYear" class="form-control" value="2026" onchange="calculateFinanceReport()"></div>
@@ -407,7 +472,7 @@
                     <div class="col-md-6"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><canvas id="doughnutChart" style="max-height: 240px;"></canvas></div></div>
                 </div>
                 <div class="row g-3 mb-4">
-                    <div class="col-12"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><h6 class="mb-3">📈 تطور صافي الثروة شهرياً</h6><canvas id="netWorthChart" style="max-height: 280px;"></canvas></div></div>
+                    <div class="col-12"><div class="p-3 border rounded bg-light-subtle" style="border-radius:var(--radius-lg)!important;background:var(--bg-secondary)!important;border-color:var(--border-light)!important;"><h6 class="mb-3">📈 تطور صافي الثروة والسيولة شهرياً</h6><canvas id="netWorthChart" style="max-height: 280px;"></canvas></div></div>
                 </div>
                 <h5 class="fw-bold mb-3"><i class="bi bi-card-checklist"></i> التزامات الفترة المحددة</h5>
                 <div class="table-responsive"><table class="table table-striped table-hover align-middle" id="dueTable"><thead class="table-dark"><tr><th>النوع</th><th>البيان / الوصف</th><th>تاريخ الاستحقاق الدقيق</th><th>المبلغ المطلوب</th><th>الحالة</th></tr></thead><tbody></tbody></table></div>
@@ -422,7 +487,7 @@
 
             <!-- installmentsTab -->
             <div class="tab-pane fade" id="installmentsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card-2-front"></i> محفظة الأقساط الائتمانية</h4><button class="btn btn-success btn-sm" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card-2-front"></i> محفظة الأقساط الائتمانية</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div>
                 <input type="text" id="searchInstallments" class="form-control mb-3" placeholder="🔍 بحث في الأقساط..." oninput="filterTable('installments')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>الجهة</th><th>المبلغ الكلي</th><th>القسط الشهري</th><th>الشهور المسددة</th><th>المتبقي للجهة</th><th>نسبة السداد</th><th>تاريخ القسط القادم</th><th>التحكم</th></tr></thead><tbody id="installmentsTableBody"></tbody></table></div>
                 <div class="alert alert-info mt-3" id="installmentsSummaryCard" style="border-radius:var(--radius-lg);"></div>
@@ -430,36 +495,36 @@
 
             <!-- recurringTab -->
             <div class="tab-pane fade" id="recurringTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-receipt-cutoff"></i> المصروفات الدورية والالتزامات الثابتة</h4><button class="btn btn-success btn-sm" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف دوري</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-receipt-cutoff"></i> المصروفات الدورية والالتزامات الثابتة</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف دوري</button></div>
                 <input type="text" id="searchRecurring" class="form-control mb-3" placeholder="🔍 بحث في المصروفات..." oninput="filterTable('recurring')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>بند الفئة</th><th>المبلغ الثابت</th><th>يوم الاستحقاق الشهري</th><th>التاريخ القادم المتوقع</th><th>التحكم</th></tr></thead><tbody id="recurringTableBody"></tbody></table></div>
             </div>
 
             <!-- cardsTab -->
             <div class="tab-pane fade" id="cardsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card"></i> مديونيات البطاقات والفيزا</h4><button class="btn btn-success btn-sm" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية كارت</button></div>
-                <div class="alert alert-warning py-2 small" style="border-radius:var(--radius-md);"><i class="bi bi-info-circle-fill"></i> تنويه ذكي: تاريخ الاستحقاق الافتراضي مبرمج تلقائياً ليكون يوم 25 من الشهر التالي لشهر الشراء الفعلي.</div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-credit-card"></i> مديونيات البطاقات والفيزا</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية كارت</button></div>
+                <div class="alert alert-warning py-2 small" style="border-radius:var(--radius-md);"><i class="bi bi-info-circle-fill"></i> تنويه ذكي: تاريخ الاستحقاق الافتراضي مبرمج ليكون يوم 25 من الشهر التالي لشراء السلعة.</div>
                 <input type="text" id="searchCards" class="form-control mb-3" placeholder="🔍 بحث في البطاقات..." oninput="filterTable('cards')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>اسم البنك</th><th>نوع الكارت</th><th>تاريخ حركة الشراء</th><th>المبلغ</th><th>تاريخ السداد (يوم 25)</th><th>أيام الأمان المتبقية</th><th>التحكم</th></tr></thead><tbody id="cardsTableBody"></tbody></table></div>
             </div>
 
             <!-- incomeTab -->
             <div class="tab-pane fade" id="incomeTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-cash"></i> مصادر الإيرادات والدخل الشهري</h4><button class="btn btn-success btn-sm" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة مورد دخل</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-cash"></i> مصادر الإيرادات والدخل الشهري</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة مورد دخل</button></div>
                 <input type="text" id="searchIncome" class="form-control mb-3" placeholder="🔍 بحث في الدخل..." oninput="filterTable('income')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>مصدر الدخل</th><th>المبلغ المقدر</th><th>يوم الإيداع المتوقع</th><th>التحكم</th></tr></thead><tbody id="incomeTableBody"></tbody></table></div>
             </div>
 
             <!-- savingsTab -->
             <div class="tab-pane fade" id="savingsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-safe2"></i> حصالات الادخار والملاذات الآمنة (كاش / ذهب / فضة)</h4><button class="btn btn-success btn-sm" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل أو صندوق جديد</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-safe2"></i> حصالات الادخار والملاذات الآمنة (كاش / ذهب / فضة)</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل أو صندوق جديد</button></div>
                 <input type="text" id="searchSavings" class="form-control mb-3" placeholder="🔍 بحث في الادخار..." oninput="filterTable('savings')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>نوع الأصل</th><th>اسم الصندوق / البيان</th><th>الكمية / المستهدف</th><th>القيمة المتوفرة</th><th>ثمن الشراء / مكسب/خسارة</th><th>تاريخ الحيازة</th><th>الإنجاز</th><th>التحكم</th></tr></thead><tbody id="savingsTableBody"></tbody></table></div>
             </div>
 
             <!-- scheduledDebtsTab -->
             <div class="tab-pane fade" id="scheduledDebtsTab" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-calendar-x"></i> الديون المجدولة والالتزامات غير الدورية</h4><button class="btn btn-success btn-sm" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4><i class="bi bi-calendar-x"></i> الديون المجدولة والالتزامات غير الدورية</h4><button class="btn btn-success btn-sm write-action" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div>
                 <input type="text" id="searchScheduledDebts" class="form-control mb-3" placeholder="🔍 بحث في الديون المجدولة..." oninput="filterTable('scheduledDebts')">
                 <div class="table-responsive"><table class="table table-bordered table-hover text-center align-middle"><thead class="table-light"><tr><th>وصف الدين</th><th>المبلغ</th><th>تاريخ الاستحقاق</th><th>ملاحظات</th><th>التحكم</th></tr></thead><tbody id="scheduledDebtsTableBody"></tbody></table></div>
             </div>
@@ -468,7 +533,7 @@
             <div class="tab-pane fade" id="goalsTab" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4><i class="bi bi-check2-square"></i> أهدافي الشخصية</h4>
-                    <button class="btn btn-success btn-sm" onclick="showGoalFormModal()"><i class="bi bi-plus-circle"></i> إضافة هدف جديد</button>
+                    <button class="btn btn-success btn-sm write-action" onclick="showGoalFormModal()"><i class="bi bi-plus-circle"></i> إضافة هدف جديد</button>
                 </div>
                 <div class="goals-container" id="goalsContainer"></div>
             </div>
@@ -477,7 +542,104 @@
             <div class="tab-pane fade" id="memoTab" role="tabpanel">
                 <h4 class="mb-3"><i class="bi bi-journal-text"></i> المذكرة والمسودة المالية الذكية</h4>
                 <textarea id="memoTextarea" class="form-control" rows="8" placeholder="اكتب هنا أي ملاحظات، تذكيرات، أو أرقام سريعة..."></textarea>
-                <div class="d-flex justify-content-between align-items-center mt-3"><span id="memoAlertText" class="text-success fw-bold"></span><button class="btn btn-primary px-4" onclick="saveMemoData()"><i class="bi bi-floppy-fill"></i> حفظ المذكرة الآن</button></div>
+                <div class="d-flex justify-content-between align-items-center mt-3"><span id="memoAlertText" class="text-success fw-bold"></span><button class="btn btn-primary px-4 write-action" onclick="saveMemoData()"><i class="bi bi-floppy-fill"></i> حفظ المذكرة الآن</button></div>
+            </div>
+
+            <!-- settingsTab -->
+            <div class="tab-pane fade" id="settingsTab" role="tabpanel">
+                <h4 class="fw-bold mb-3"><i class="bi bi-gear-fill text-primary"></i> الإعدادات المتقدمة وإدارة مساحة العمل</h4>
+                <p class="text-secondary small">هذه الواجهة مخصصة لإدارة العملة، التنبيهات، فريق العمل والتحكم بمسار الأمان السحابي.</p>
+                <hr>
+                
+                <div class="row g-3">
+                    <!-- القسم الأول: إعدادات مظهر ومحتوى العملة -->
+                    <div class="col-md-6">
+                        <div class="glass-card h-100">
+                            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-sliders"></i> التخصيص العام والعملة</h5>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">اسم مساحة العمل الحالي:</label>
+                                <input type="text" id="set_workspace_name" class="form-control" placeholder="Egyup Cloud System" onchange="updateWorkspaceMeta()">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">رمز العملة (مثال: ج.م، $، SAR):</label>
+                                <input type="text" id="set_currency_symbol" class="form-control" placeholder="ج" onchange="updateWorkspaceMeta()">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">أيام التذكير المسبق بالالتزامات:</label>
+                                <select id="set_alert_days" class="form-select" onchange="updateWorkspaceMeta()">
+                                    <option value="1">يوم واحد قبل الاستحقاق</option>
+                                    <option value="2">يومان (2) قبل الاستحقاق</option>
+                                    <option value="3" selected>3 أيام قبل الاستحقاق</option>
+                                    <option value="5">5 أيام قبل الاستحقاق</option>
+                                    <option value="7">أسبوع كامل قبل الاستحقاق</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- القسم الثاني: الملاءة والتحصينات المالية الذكية -->
+                    <div class="col-md-6">
+                        <div class="glass-card h-100">
+                            <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-shield-fill-check"></i> التحصينات الوقائية والذهب</h5>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">هدف صندوق الطوارئ الكافي (بالشهور):</label>
+                                <input type="number" id="set_emergency_months" class="form-control" value="6" min="1" onchange="updateWorkspaceMeta()">
+                                <span class="text-muted small">عدد الشهور التي يجب لمدخراتك تغطيتها كـ "طوارئ".</span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">معدل الديون القصوى المستهدف (DTI %):</label>
+                                <input type="number" id="set_max_dti" class="form-control" value="40" min="10" max="100" onchange="updateWorkspaceMeta()">
+                                <span class="text-muted small">سيقوم النظام بإطلاق إشعار حذر إذا تجاوزت ديونك هذه النسبة من دخلك الكلي.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- القسم الثالث: إدارة فريق العمل -->
+                    <div class="col-md-12">
+                        <div class="glass-card">
+                            <h5 class="fw-bold mb-2 text-info"><i class="bi bi-people-fill"></i> نظام المشاركة والتحكم بفريق العمل (صلاحيات الأعضاء)</h5>
+                            <p class="text-secondary small">بصفتك (مالك) الحساب، يمكنك إضافة أشخاص آخرين لمشاهدة ميزانيتك أو مساعدتك في الإدارة اللحظية.</p>
+                            
+                            <!-- فورمة إضافة عضو للمساحة -->
+                            <div class="row g-2 mb-3 align-items-end" id="teamManagementForm">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">الاسم التعريفي للعضو الجديد:</label>
+                                    <input type="text" id="new_member_name" class="form-control" placeholder="مثال: أحمد المحاسب">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold">كود الحساب السحابي الفريد للعضو (Cloud ID):</label>
+                                    <input type="text" id="new_member_uid" class="form-control" placeholder="ألصق كود حسابه السحابي من جهازه هنا">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-bold">الدور والصلاحية:</label>
+                                    <select id="new_member_role" class="form-select">
+                                        <option value="Manager">المدير المالي (تعديل كامل)</option>
+                                        <option value="Viewer">مشاهد (قراءة فقط)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-info w-100 fw-bold write-action" onclick="addNewTeamMember()"><i class="bi bi-person-plus-fill"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped text-center align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>الاسم</th>
+                                            <th>الـ Cloud ID</th>
+                                            <th>الدور</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teamMembersListBody">
+                                        <tr><td colspan="4" class="text-muted">جاري التحميل أو لا يوجد أعضاء مشاركون في هذه المساحة حالياً.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- tipsTab -->
@@ -541,9 +703,9 @@
                         <label class="fw-bold text-warning mb-1 small">ربط جهاز آخر / الدخول برمز حساب موجود:</label>
                         <div class="d-flex gap-2">
                             <input type="text" id="targetCloudIdInput" class="form-control" placeholder="أدخل رمز حساب آخر">
-                            <button class="btn btn-warning px-3 fw-bold" onclick="connectToCustomCloudId()"><i class="bi bi-link-45deg"></i> ربط الحساب</button>
+                            <button class="btn btn-warning px-3 fw-bold write-action" onclick="connectToCustomCloudId()"><i class="bi bi-link-45deg"></i> ربط الحساب</button>
                         </div>
-                        <span class="text-secondary small mt-1">تنبيه: سيؤدي هذا لتسجيل خروجك من حسابك الحالي والدخول للحساب الجديد.</span>
+                        <span class="text-secondary small mt-1">تنبيه: سيؤدي هذا لتسجيل خروجك من حسابك الحالي والدخول للحساب الجديد ورؤية بياناته.</span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -559,76 +721,71 @@
     </div>
 
     <div class="modal fade" id="alertsModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5><i class="bi bi-bell-fill"></i> تنبيهات هامة</h5></div><div class="modal-body" id="alertsModalBody"></div></div></div>
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5><i class="bi bi-bell-fill"></i> تنبيهات هامة</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="alertsModalBody"></div></div></div>
     </div>
 
     <div class="modal fade" id="formModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 id="formModalTitle">إضافة</h5></div><div class="modal-body" id="formModalBody"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success" id="formModalSubmitBtn">حفظ</button></div></div></div>
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 id="formModalTitle">إضافة</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="formModalBody"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-success" id="formModalSubmitBtn">حفظ</button></div></div></div>
     </div>
 
     <!-- Custom Alert Modal -->
     <div class="modal fade" id="customAlertModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customAlertTitle">تنبيه</h5></div><div class="modal-body" id="customAlertBody"></div><div class="modal-footer"><button class="btn btn-primary" data-bs-dismiss="modal">حسناً</button></div></div></div>
+        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customAlertTitle">تنبيه</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customAlertBody"></div><div class="modal-footer"><button class="btn btn-primary text-white" data-bs-dismiss="modal">حسناً</button></div></div></div>
     </div>
 
     <!-- Custom Confirm Modal -->
     <div class="modal fade" id="customConfirmModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customConfirmTitle">تأكيد</h5></div><div class="modal-body" id="customConfirmBody"></div><div class="modal-footer"><button class="btn btn-secondary" id="customConfirmNo">لا</button><button class="btn btn-primary" id="customConfirmYes">نعم</button></div></div></div>
+        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customConfirmTitle">تأكيد</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="customConfirmBody"></div><div class="modal-footer"><button class="btn btn-secondary" id="customConfirmNo">لا</button><button class="btn btn-primary text-white" id="customConfirmYes">نعم</button></div></div></div>
     </div>
 
     <!-- Custom Prompt Modal -->
     <div class="modal fade" id="customPromptModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customPromptTitle">إدخال</h5></div><div class="modal-body"><p id="customPromptMessage"></p><input type="text" id="customPromptInput" class="form-control"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-primary" id="customPromptOk">موافق</button></div></div></div>
+        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="customPromptTitle">إدخال</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><p id="customPromptMessage"></p><input type="text" id="customPromptInput" class="form-control"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button class="btn btn-primary text-white" id="customPromptOk">موافق</button></div></div></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- تضمين مكتبات Firebase السحابية -->
+    <!-- تضمين مكتبات Firebase السحابية وتكامل الصلاحيات والمشاركة (Rule 1 & Rule 3) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ======================== FIREBASE CONFIG & AUTH ========================
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'egyup-system-v2';
-        
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCdrvuLSIhI7Dqa4PVMsUp21sarGeS2gmc",
-  authDomain: "my-egyup-system.firebaseapp.com",
-  projectId: "my-egyup-system",
-  storageBucket: "my-egyup-system.firebasestorage.app",
-  messagingSenderId: "92923907638",
-  appId: "1:92923907638:web:28b67cf9d2e03f605ed297",
-  measurementId: "G-2X50XNEWC5"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdrvuLSIhI7Dqa4PVMsUp21sarGeS2gmc",
+            authDomain: "my-egyup-system.firebaseapp.com",
+            projectId: "my-egyup-system",
+            storageBucket: "my-egyup-system.firebasestorage.app",
+            messagingSenderId: "92923907638",
+            appId: "1:92923907638:web:28b67cf9d2e03f605ed297",
+            measurementId: "G-2X50XNEWC5"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'egyup-system-v2';
 
         let currentUser = null;
         let firestoreUnsubscribe = null;
+        let firestoreConfigUnsubscribe = null;
+        let isFirstLoadComplete = false;
 
-        // تهيئة المصادقة السحابية (Rule 3)
+        // تهيئة المصادقة السحابية أولاً لضمان وجود مستخدم (Rule 3)
         async function runCloudAuth() {
             try {
-                // إذا كان المستخدم قد حدد يدوياً الدخول برمز حساب مخصص مخزن محلياً
-                const savedCustomId = localStorage.getItem('egyup_custom_user_id');
-                if (savedCustomId) {
-                    // نقوم بمحاكاة تسجيل دخول لهذا الـ ID (أو استخدام الـ anonymous الافتراضي إذا لم نجد الرموز)
-                    // في نظامنا نقوم بتسجيل الدخول مجهول وتوجيه المسار الخاص به في Firestore
-                    // لتسهيل تبادل الأجهزة، سنستخدم معرف فريد يتم إنشاؤه مسبقاً أو تزامنه
-                }
-
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    try {
+                        // محاولة تسجيل الدخول بالتوكن المخصص
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (tokenErr) {
+                        // في حال حدوث خطأ التوكن (custom-token-mismatch)، يتم تلافي الخطأ والتحول للمجهول
+                        console.warn("Custom token failed, signing in anonymously:", tokenErr);
+                        await signInAnonymously(auth);
+                    }
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (err) {
                 console.error("Firebase connection error: ", err);
-                // محاولة الاتصال كـ anonymous محلي كخطة بديلة
                 try {
                     await signInAnonymously(auth);
                 } catch(e) {
@@ -646,87 +803,227 @@ const firebaseConfig = {
             document.getElementById('syncIndicator').innerHTML = `
                 <i class="bi bi-exclamation-triangle-fill"></i> الحفظ محلي فقط
             `;
+            window.userRole = 'Owner';
+            window.applyPermissionsUI();
         }
 
-        // مراقبة حالة الاتصال والتبديل
-        onAuthStateChanged(auth, (user) => {
+        // مراقبة المصادقة والتحقق من الصلاحيات وربط الحسابات (Rule 3)
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                const finalUserId = localStorage.getItem('egyup_custom_user_id') || user.uid;
+                const activeWorkspaceId = localStorage.getItem('egyup_custom_user_id') || user.uid;
                 
                 document.getElementById('userConnectionStatus').innerHTML = `
                     <span class="badge bg-success-soft text-success p-2">
                         <i class="bi bi-cloud-check-fill"></i> متصل بالسحابة اللحظية
                     </span>
-                    <span class="ms-1 text-muted small d-none d-md-inline-block">معرّف الحساب: <code class="user-select-all">${finalUserId}</code></span>
+                    <span class="ms-1 text-muted small d-none d-md-inline-block">كود الحساب النشط: <code class="user-select-all">${activeWorkspaceId}</code></span>
                 `;
-                document.getElementById('myCloudIdField').value = finalUserId;
+                document.getElementById('myCloudIdField').value = activeWorkspaceId;
                 
-                // تفعيل المزامنة اللحظية
-                activateCloudSynchronization(finalUserId);
+                // تحديد الدور (صاحب الحساب أم ضيف)
+                if (activeWorkspaceId === user.uid) {
+                    window.userRole = 'Owner';
+                    document.getElementById('roleIndicator').className = 'badge bg-success-soft text-success badge-role';
+                    document.getElementById('roleIndicator').innerHTML = '<i class="bi bi-shield-fill-check"></i> صلاحية: مالك مساحة العمل';
+                    window.applyPermissionsUI();
+                    
+                    activateCloudSynchronization(activeWorkspaceId);
+                    activateWorkspaceConfigSync(activeWorkspaceId);
+                } else {
+                    checkGuestPermissions(activeWorkspaceId, user.uid);
+                }
             } else {
                 currentUser = null;
                 setOfflineUI();
             }
         });
 
-        // تفعيل الاستماع اللحظي للبيانات في Firestore (Rule 1 & Rule 2)
-        function activateCloudSynchronization(userId) {
+        // التحقق من صلاحيات العضو المضاف في مساحة عمل خارجية (Rule 1 & Rule 2)
+        async function checkGuestPermissions(workspaceId, myUid) {
+            const configRef = doc(db, 'artifacts', appId, 'users', workspaceId, 'config', 'workspace');
+            try {
+                const configSnap = await getDoc(configRef);
+                if (configSnap.exists()) {
+                    const data = configSnap.data();
+                    const members = data.members || [];
+                    const memberRecord = members.find(m => m.uid === myUid);
+                    
+                    if (memberRecord) {
+                        window.userRole = memberRecord.role || 'Viewer';
+                        let badgeClass = window.userRole === 'Manager' ? 'bg-warning-soft text-warning' : 'bg-secondary-soft text-secondary';
+                        let roleName = window.userRole === 'Manager' ? 'مدير مالي (مشارك)' : 'مشاهد ومراقب (قراءة فقط)';
+                        
+                        document.getElementById('roleIndicator').className = `badge ${badgeClass} badge-role`;
+                        document.getElementById('roleIndicator').innerHTML = `<i class="bi bi-person-fill-lock"></i> صلاحية: ${roleName}`;
+                        
+                        window.applyPermissionsUI();
+                        activateCloudSynchronization(workspaceId);
+                        activateWorkspaceConfigSync(workspaceId);
+                    } else {
+                        window.showCustomAlert("⚠️ عذراً، لم يقم مالك هذه الميزانية بإضافتك إلى فريق العمل الخاص به. يرجى الطلب منه تسجيل كود الـ Cloud ID الخاص بك أولاً في صفحة إعداداته.", "تم حظر الاتصال");
+                        localStorage.removeItem('egyup_custom_user_id');
+                        setTimeout(() => window.location.reload(), 3000);
+                    }
+                } else {
+                    window.showCustomAlert("⚠️ عذراً، لم تكتمل تهيئة ميزانية المالك المستهدف أو مساحة العمل غير صالحة.", "مساحة غير صالحة");
+                    localStorage.removeItem('egyup_custom_user_id');
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            } catch (err) {
+                console.error("Permission check failed:", err);
+                setOfflineUI();
+            }
+        }
+
+        // تطبيق واجهة المستخدم بناء على الصلاحيات المقررة
+        function applyPermissionsUI() {
+            const isReadonly = window.userRole === 'Viewer';
+            const isOwner = window.userRole === 'Owner';
+            
+            // قفل / إتاحة أزرار الإضافة والتغيير
+            document.querySelectorAll('.write-action').forEach(btn => {
+                if (isReadonly) {
+                    btn.classList.add('role-restricted');
+                    btn.setAttribute('disabled', 'true');
+                    btn.setAttribute('title', 'صلاحيتك الحالية مشاهدة فقط');
+                } else {
+                    btn.classList.remove('role-restricted');
+                    btn.removeAttribute('disabled');
+                }
+            });
+
+            // قفل عناصر إعدادات المالك المتقدمة
+            const isConfigurable = isOwner; 
+            const configInputs = ['set_workspace_name', 'set_currency_symbol', 'set_alert_days', 'set_emergency_months', 'set_max_dti', 'new_member_name', 'new_member_uid', 'new_member_role'];
+            configInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (!isConfigurable) {
+                        el.setAttribute('disabled', 'true');
+                        el.classList.add('role-restricted');
+                    } else {
+                        el.removeAttribute('disabled');
+                        el.classList.remove('role-restricted');
+                    }
+                }
+            });
+
+            const teamForm = document.getElementById('teamManagementForm');
+            if (teamForm) {
+                if (!isOwner) teamForm.classList.add('hidden');
+                else teamForm.classList.remove('hidden');
+            }
+        }
+
+        // تفعيل استماع السحابة اللحظية لحالة البيانات (Rule 1 & Rule 2)
+        function activateCloudSynchronization(workspaceId) {
             if (firestoreUnsubscribe) firestoreUnsubscribe();
 
-            // المسار الصارم والآمن للبيانات الخاصة بالمستخدم وفقًا للقواعد (RULE 1)
-            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financials', 'state');
+            const docRef = doc(db, 'artifacts', appId, 'users', workspaceId, 'financials', 'state');
 
-            // مراقبة التعديلات لحظة بلحظة وبشكل فوري
             firestoreUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
-                    // مزامنة الكائن المحلي مع البيانات القادمة من السيرفر
-                    appData.installments = cloudData.installments || [];
-                    appData.recurring = cloudData.recurring || [];
-                    appData.cards = cloudData.cards || [];
-                    appData.income = cloudData.income || [];
-                    appData.savings = cloudData.savings || [];
-                    appData.scheduledDebts = cloudData.scheduledDebts || [];
-                    appData.goals = cloudData.goals || [];
-                    appData.memo = cloudData.memo || '';
+                    
+                    window.appData.installments = cloudData.installments || [];
+                    window.appData.recurring = cloudData.recurring || [];
+                    window.appData.cards = cloudData.cards || [];
+                    window.appData.income = cloudData.income || [];
+                    window.appData.savings = cloudData.savings || [];
+                    window.appData.scheduledDebts = cloudData.scheduledDebts || [];
+                    window.appData.goals = cloudData.goals || [];
+                    window.appData.memo = cloudData.memo || '';
                 } else {
-                    // إذا لم تكن هناك بيانات سحابية من قبل لهذا المعرّف، نبحث في الـ Local Storage القديم لنقله للسحابة
-                    migrateOldDataToCloud(userId);
+                    migrateOldDataToCloud(workspaceId);
                 }
 
-                // تحديث الشاشات والجداول فورياً بعد المزامنة
-                renderAllModulesTables();
-                renderGoals();
-                calculateFinanceReport();
-                calculateGlobalOverview();
-                loadMemoData();
+                // تحديث الواجهات الحسابية بشكل تفاعلي وفوري
+                window.renderAllModulesTables();
+                window.renderGoals();
+                window.calculateFinanceReport();
+                window.calculateGlobalOverview();
+                window.loadMemoData();
+
+                if (!isFirstLoadComplete) {
+                    isFirstLoadComplete = true;
+                    window.showAutoAlerts();
+                } else {
+                    window.updateNotificationBadge();
+                }
+
             }, (error) => {
                 console.error("Error reading Cloud Data:", error);
             });
         }
 
-        // نقل البيانات المحلية القديمة إلى حساب السحابي الجديد
-        async function migrateOldDataToCloud(userId) {
+        // تفعيل استماع التهيئات السحابية وإعدادات فريق العمل (Rule 1)
+        function activateWorkspaceConfigSync(workspaceId) {
+            if (firestoreConfigUnsubscribe) firestoreConfigUnsubscribe();
+            
+            const configRef = doc(db, 'artifacts', appId, 'users', workspaceId, 'config', 'workspace');
+            
+            firestoreConfigUnsubscribe = onSnapshot(configRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.workspaceMeta = {
+                        name: data.name || "Egyup Cloud System",
+                        currency: data.currency || "ج",
+                        alertDays: parseInt(data.alertDays) || 3,
+                        emergencyMonths: parseInt(data.emergencyMonths) || 6,
+                        maxDti: parseInt(data.maxDti) || 40,
+                        members: data.members || []
+                    };
+                } else {
+                    window.workspaceMeta = {
+                        name: "Egyup Cloud System",
+                        currency: "ج",
+                        alertDays: 3,
+                        emergencyMonths: 6,
+                        maxDti: 40,
+                        members: []
+                    };
+                    saveWorkspaceConfigToCloud(workspaceId);
+                }
+                
+                // تحديث الإعدادات في الواجهة
+                document.getElementById('workspaceTitleDisplay').textContent = window.workspaceMeta.name;
+                document.getElementById('set_workspace_name').value = window.workspaceMeta.name;
+                document.getElementById('set_currency_symbol').value = window.workspaceMeta.currency;
+                document.getElementById('set_alert_days').value = window.workspaceMeta.alertDays;
+                document.getElementById('set_emergency_months').value = window.workspaceMeta.emergencyMonths;
+                document.getElementById('set_max_dti').value = window.workspaceMeta.maxDti;
+                
+                window.renderTeamMembersList();
+                window.calculateFinanceReport();
+                window.calculateGlobalOverview();
+            }, (error) => {
+                console.error("Error syncing Config:", error);
+            });
+        }
+
+        // ترحيل البيانات القديمة للسيرفر الجديد
+        async function migrateOldDataToCloud(workspaceId) {
             let oldDataRaw = localStorage.getItem('egyup_raw_data_v2');
             if (oldDataRaw) {
                 try {
                     let oldData = JSON.parse(oldDataRaw);
                     if (validateImportData(oldData)) {
-                        appData = oldData;
-                        await saveAppDataToCloud(userId);
+                        window.appData = oldData;
+                        await saveAppDataToCloud(workspaceId);
                         return;
                     }
                 } catch(e) {}
             }
-            // إذا لم يكن هناك داتا سابقة، نقوم بتهيئة السحابة بكائن فارغ
-            await saveAppDataToCloud(userId);
+            await saveAppDataToCloud(workspaceId);
         }
 
-        // حفظ البيانات في السحابية (Rule 1 & Rule 3)
-        async function saveAppDataToCloud(optionalUserId = null) {
-            const finalUserId = optionalUserId || localStorage.getItem('egyup_custom_user_id') || (currentUser ? currentUser.uid : null);
-            if (!finalUserId) return;
+        // حفظ البيانات الفعلية (Rule 1 & Rule 3)
+        async function saveAppDataToCloud(optionalWorkspaceId = null) {
+            if (window.userRole === 'Viewer') return; 
+            
+            const workspaceId = optionalWorkspaceId || localStorage.getItem('egyup_custom_user_id') || (currentUser ? currentUser.uid : null);
+            if (!workspaceId) return;
 
             const syncIndicator = document.getElementById('syncIndicator');
             if (syncIndicator) {
@@ -734,19 +1031,18 @@ const firebaseConfig = {
                 syncIndicator.className = 'badge bg-body-secondary py-2 px-3 small text-warning fw-bold';
             }
 
-            // المسار الصارم لحفظ الداتا الخاصة بالمستخدم في Firestore (Rule 1)
-            const docRef = doc(db, 'artifacts', appId, 'users', finalUserId, 'financials', 'state');
+            const docRef = doc(db, 'artifacts', appId, 'users', workspaceId, 'financials', 'state');
 
             try {
                 await setDoc(docRef, {
-                    installments: appData.installments,
-                    recurring: appData.recurring,
-                    cards: appData.cards,
-                    income: appData.income,
-                    savings: appData.savings,
-                    scheduledDebts: appData.scheduledDebts,
-                    goals: appData.goals,
-                    memo: appData.memo
+                    installments: window.appData.installments,
+                    recurring: window.appData.recurring,
+                    cards: window.appData.cards,
+                    income: window.appData.income,
+                    savings: window.appData.savings,
+                    scheduledDebts: window.appData.scheduledDebts,
+                    goals: window.appData.goals,
+                    memo: window.appData.memo
                 });
 
                 if (syncIndicator) {
@@ -754,37 +1050,126 @@ const firebaseConfig = {
                     syncIndicator.className = 'badge bg-body-secondary py-2 px-3 small text-success fw-bold';
                 }
                 
-                // نقوم بتحديث الكائن المحلي احتياطاً
-                localStorage.setItem('egyup_raw_data_v2', JSON.stringify(appData));
+                localStorage.setItem('egyup_raw_data_v2', JSON.stringify(window.appData));
             } catch(e) {
-                console.error("Save failed:", e);
+                console.error("Save state failed:", e);
                 if (syncIndicator) {
-                    syncIndicator.innerHTML = '<i class="bi bi-cloud-slash-fill"></i> فشل الاتصال بالسيرفر';
+                    syncIndicator.innerHTML = '<i class="bi bi-cloud-slash-fill"></i> فشل حفظ السحابة';
                     syncIndicator.className = 'badge bg-body-secondary py-2 px-3 small text-danger fw-bold';
                 }
             }
         }
 
-        // تصدير دوال السيرفر للوصول إليها من بقية عناصر الكود العادية
+        // حفظ تهيئات وإعدادات مساحة العمل وقائمة فريق العمل (Rule 1 & Rule 3)
+        async function saveWorkspaceConfigToCloud(optionalWorkspaceId = null) {
+            if (window.userRole !== 'Owner') return; 
+            
+            const workspaceId = optionalWorkspaceId || localStorage.getItem('egyup_custom_user_id') || (currentUser ? currentUser.uid : null);
+            if (!workspaceId) return;
+
+            const configRef = doc(db, 'artifacts', appId, 'users', workspaceId, 'config', 'workspace');
+
+            try {
+                await setDoc(configRef, {
+                    name: window.workspaceMeta.name,
+                    currency: window.workspaceMeta.currency,
+                    alertDays: window.workspaceMeta.alertDays,
+                    emergencyMonths: window.workspaceMeta.emergencyMonths,
+                    maxDti: window.workspaceMeta.maxDti,
+                    members: window.workspaceMeta.members
+                });
+            } catch (e) {
+                console.error("Save config failed:", e);
+            }
+        }
+
+        // تصدير وتكامل الدوال مع الأجزاء العادية من السكريبت
+        window.applyPermissionsUI = applyPermissionsUI;
         window.saveAppDataToCloud = saveAppDataToCloud;
+        window.saveWorkspaceConfigToCloud = saveWorkspaceConfigToCloud;
         window.runCloudAuth = runCloudAuth;
 
-        // بدء تشغيل الاتصال
+        // إطلاق الاتصال
         runCloudAuth();
     </script>
 
     <script>
-        // ======================== DATA & STATE ========================
-        let appData = {
-            installments: [],
-            recurring: [],
-            cards: [],
-            income: [],
-            savings: [],
-            scheduledDebts: [],
-            goals: [],
-            memo: ''
-        };
+        // ======================== CUSTOM ALERT & DIALOG FUNCTIONS ========================
+        // تعريف وتأكيد دوال التنبيهات المنبثقة التفاعلية المخصصة
+        function showCustomAlert(message, title = "تنبيه") {
+            const modalEl = document.getElementById('customAlertModal');
+            if (!modalEl) {
+                alert(message);
+                return;
+            }
+            document.getElementById('customAlertTitle').textContent = title;
+            document.getElementById('customAlertBody').innerHTML = message;
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        function showCustomConfirm(message, callback, title = "تأكيد") {
+            const modalEl = document.getElementById('customConfirmModal');
+            if (!modalEl) {
+                if (confirm(message)) {
+                    if (callback) callback();
+                }
+                return;
+            }
+            document.getElementById('customConfirmTitle').textContent = title;
+            document.getElementById('customConfirmBody').innerHTML = message;
+            const modal = new bootstrap.Modal(modalEl);
+
+            const btnYes = document.getElementById('customConfirmYes');
+            const btnNo = document.getElementById('customConfirmNo');
+
+            // إزالة المستمعات القديمة عن طريق الاستنساخ لمنع التكرار
+            const newBtnYes = btnYes.cloneNode(true);
+            const newBtnNo = btnNo.cloneNode(true);
+            btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+            btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+            newBtnYes.addEventListener('click', () => {
+                modal.hide();
+                if (callback) callback();
+            });
+            newBtnNo.addEventListener('click', () => {
+                modal.hide();
+            });
+
+            modal.show();
+        }
+
+        function showCustomPrompt(message, defaultValue, callback, title = "إدخال") {
+            const modalEl = document.getElementById('customPromptModal');
+            if (!modalEl) {
+                let val = prompt(message, defaultValue);
+                if (callback) callback(val);
+                return;
+            }
+            document.getElementById('customPromptTitle').textContent = title;
+            document.getElementById('customPromptMessage').innerHTML = message;
+            const input = document.getElementById('customPromptInput');
+            input.value = defaultValue || '';
+            const modal = new bootstrap.Modal(modalEl);
+
+            const btnOk = document.getElementById('customPromptOk');
+            const newBtnOk = btnOk.cloneNode(true);
+            btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+
+            newBtnOk.addEventListener('click', () => {
+                modal.hide();
+                if (callback) callback(input.value);
+            });
+
+            modal.show();
+        }
+
+        // ربط الدوال السحابية بنطاق النافذة لسهولة الاتصال
+        window.showCustomAlert = showCustomAlert;
+        window.showCustomConfirm = showCustomConfirm;
+        window.showCustomPrompt = showCustomPrompt;
+
         let activeView = 'monthly';
         let currentEditType = '';
         let currentEditIndex = null;
@@ -792,94 +1177,241 @@ const firebaseConfig = {
         let chartInstanceDoughnut = null;
         let chartInstanceNetWorth = null;
         let lastExportTime = null;
-        let backupReminderInterval = null;
         let notificationInterval = null;
         let notificationsEnabled = false;
 
-        // Custom modal handlers
-        function showCustomAlert(message, title = 'تنبيه') {
-            document.getElementById('customAlertTitle').textContent = title;
-            document.getElementById('customAlertBody').textContent = message;
-            new bootstrap.Modal(document.getElementById('customAlertModal')).show();
+        function getCurrency() {
+            return window.workspaceMeta ? window.workspaceMeta.currency : "ج";
         }
 
-        function showCustomConfirm(message, onYes, onNo, title = 'تأكيد') {
-            document.getElementById('customConfirmTitle').textContent = title;
-            document.getElementById('customConfirmBody').textContent = message;
-            const modalEl = document.getElementById('customConfirmModal');
-            const modal = new bootstrap.Modal(modalEl);
-            const yesBtn = document.getElementById('customConfirmYes');
-            const noBtn = document.getElementById('customConfirmNo');
-
-            const cleanup = () => {
-                yesBtn.removeEventListener('click', yesHandler);
-                noBtn.removeEventListener('click', noHandler);
-                modalEl.removeEventListener('hidden.bs.modal', cleanup);
-            };
-
-            const yesHandler = () => { cleanup(); modal.hide(); if (onYes) onYes(); };
-            const noHandler = () => { cleanup(); modal.hide(); if (onNo) onNo(); };
-
-            yesBtn.addEventListener('click', yesHandler);
-            noBtn.addEventListener('click', noHandler);
-            modalEl.addEventListener('hidden.bs.modal', cleanup);
-            modal.show();
+        function checkActionPermission(action = 'write') {
+            if (window.userRole === 'Viewer') {
+                showCustomAlert("⚠️ عذراً، لا تمتلك الصلاحية الكافية لإجراء هذا التغيير المالي. دورك الحالي: مشاهد فقط.", "خطأ بالصلاحيات");
+                return false;
+            }
+            if (action === 'owner_only' && window.userRole !== 'Owner') {
+                showCustomAlert("⚠️ عذراً، هذا الإجراء مسموح به حصرياً لمالك الميزانية الأساسي.", "صلاحية مالك فقط");
+                return false;
+            }
+            return true;
         }
 
-        function showCustomPrompt(message, defaultValue, callback) {
-            document.getElementById('customPromptTitle').textContent = 'إدخال';
-            document.getElementById('customPromptMessage').textContent = message;
-            const input = document.getElementById('customPromptInput');
-            input.value = defaultValue || '';
-            const modalEl = document.getElementById('customPromptModal');
-            const modal = new bootstrap.Modal(modalEl);
-            const okBtn = document.getElementById('customPromptOk');
-
-            const cleanup = () => {
-                okBtn.removeEventListener('click', okHandler);
-                modalEl.removeEventListener('hidden.bs.modal', cleanup);
-            };
-
-            const okHandler = () => {
-                cleanup();
-                modal.hide();
-                if (callback) callback(input.value);
-            };
-
-            okBtn.addEventListener('click', okHandler);
-            modalEl.addEventListener('hidden.bs.modal', cleanup);
-            modal.show();
-            input.focus();
+        // نسخة احتياطية محلية مع حفظ سحابي
+        function backupDataLocally() {
+            localStorage.setItem('egyup_raw_data_v2', JSON.stringify(window.appData));
+            if (window.saveAppDataToCloud) {
+                window.saveAppDataToCloud();
+            }
         }
 
-        const financialTipsLibrary = [
-            "قاعدة 50/30/20: قسّم دخلك إلى 50% للاحتياجات، 30% للرغبات، و20% للادخار والاستثمار.",
-            "تجنب شراء أشياء لا تحتاجها لإبهار أشخاص لا يهتمون بك.",
-            "الديون الاستهلاكية (مثل شراء الأجهزة بالتقسيط للمظاهر) هي فخ يستنزف مستقبلك المالي.",
-            "قبل شراء أي شيء غير ضروري، انتظر 48 ساعة. إذا كنت لا تزال تريده، فقم بشرائه.",
-            "ادخر أولاً ثم أنفق ما تبقى، ولا تفعل العكس وتنتظر الادخار من الفائض.",
-            "اجعل هدفك الأول بناء 'صندوق طوارئ' يغطي مصاريفك المعيشية لمدة 3 إلى 6 أشهر.",
-            "استثمر في نفسك أولاً؛ تطوير مهاراتك هو أفضل استثمار يدر عليك دخلاً أعلى.",
-            "تتبع مصاريفك الصغيرة؛ فالقطرات الصغيرة تصنع جدولاً، والمصاريف التافهة تصنع عجزاً ماليًا.",
-            "الذهب والفضة ملاذات آمنة لحفظ قيمة المال من التضخم، وليست أداة للمضاربة السريعة.",
-            "لا تضع البيض كله في سلة واحدة، نوّع مدخراتك بين الكاش، الأصول، والمعادن.",
-            "كروت الائتمان وسيلة تسهيل دفع وليست دخلاً إضافياً، ادفع كامل مستحقاتها قبل يوم 25 لتجنب الفوائد.",
-            "المال الذي تتدخره اليوم هو الحرية والأمان اللذان تتمتع بهما غداً.",
-            "راجع اشتراكاتك الشهرية والخدمات الرقمية التي لا تستخدمها بشكل دوري وقم بإلغائها فوراً.",
-            "التسوق مع قائمة محددة مسبقاً يحميك من الشراء العاطفي والاندفاعي.",
-            "تخفيض مصاريفك الثابتة (مثل الفواتير والاشتراكات) له أثر تراكمي ضخم على المدى الطويل.",
-            "الثراء لا يقاس بما تنفقه وتظهره للناس، بل بالقيمة الصافية لأصولك ومدخراتك غير المرئية.",
-            "اشترِ الجودة دائماً في الأشياء الأساسية؛ فالأشياء الرخيصة سريعة التلف تكلفك أكثر على المدى البعيد.",
-            "كل قرش تسدده من قسط أو دين متبقٍ هو خطوة حقيقية نحو استعادة حريتك المالية الكاملة.",
-            "اجعل لعائلتك نصيباً من التخطيط المالي؛ التكافل والوضوح يمنعان الأزمات المفاجئة.",
-            "الاستثمار يتطلب صبراً، والأرباح الحقيقية تأتي مع الوقت وليس بين عشية وضحاها."
-        ];
+        // نسخ كود المعرّف
+        function copyMyCloudId() {
+            const field = document.getElementById('myCloudIdField');
+            if (field) {
+                field.select();
+                field.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                showCustomAlert("✅ تم نسخ كود حسابك السحابي الفريد بنجاح!", "تم النسخ");
+            }
+        }
+        window.copyMyCloudId = copyMyCloudId;
 
-        function showRandomTip() {
-            const tip = document.getElementById('financialTipText');
-            if (tip) tip.textContent = financialTipsLibrary[Math.floor(Math.random() * financialTipsLibrary.length)];
+        // ربط بمساحة ميزانية مخصصة
+        function connectToCustomCloudId() {
+            if (!checkActionPermission('write')) return;
+            const input = document.getElementById('targetCloudIdInput');
+            if (!input) return;
+            const targetId = input.value.trim();
+            if (!targetId) {
+                showCustomAlert("⚠️ يرجى إدخال كود حساب نشط وصحيح للربط.", "كود غير صالح");
+                return;
+            }
+            showCustomConfirm(`هل أنت متأكد من ربط حسابك بـ (${targetId}) ومتابعة بياناته؟`, () => {
+                localStorage.setItem('egyup_custom_user_id', targetId);
+                showCustomAlert("✅ جاري تهيئة الاتصال السحابي بالمساحة الجديدة... سيتم إعادة تحميل الصفحة الآن لتبسيط البيانات المفتوحة.", "ربط ناجح");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            });
+        }
+        window.connectToCustomCloudId = connectToCustomCloudId;
+
+        // إظهار نافذة السحابة
+        function showCloudSyncModal() {
+            const modalEl = document.getElementById('cloudModal');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        }
+        window.showCloudSyncModal = showCloudSyncModal;
+
+        // ======================== DYNAMIC ANALYSIS & DIAGNOSTIC ========================
+        function runDynamicFinancialDiagnostic(totalIncome, totalDebts, totalAssets) {
+            const container = document.getElementById('financeDiagnosticContent');
+            if (!container) return;
+
+            const dti = totalIncome > 0 ? Math.round((totalDebts / totalIncome) * 100) : (totalDebts > 0 ? 100 : 0);
+            const targetDti = window.workspaceMeta.maxDti || 40;
+            
+            let dtiClass = "text-success", dtiStatus = "آمن وممتاز ✅";
+            if (dti > targetDti) {
+                dtiClass = "text-danger fw-bold";
+                dtiStatus = "خطر مالي متراكم! ⚠️";
+            } else if (dti > targetDti * 0.75) {
+                dtiClass = "text-warning fw-bold";
+                dtiStatus = "حذر/اقتراب من الحدود القصوى ⚠️";
+            }
+
+            let monthlyFixedExpenses = 0;
+            window.appData.installments.forEach(i => {
+                if ((parseInt(i.paidCount)||0) < (parseInt(i.totalCount)||0)) {
+                    monthlyFixedExpenses += parseFloat(i.monthlyAmount) || 0;
+                }
+            });
+            window.appData.recurring.forEach(r => monthlyFixedExpenses += parseFloat(r.amount) || 0);
+
+            const emergencyFundMonthsTarget = window.workspaceMeta.emergencyMonths || 6;
+            let emergencyStatusHtml = "";
+            if (monthlyFixedExpenses > 0) {
+                const monthsCovered = Math.round((totalAssets / monthlyFixedExpenses) * 10) / 10;
+                if (monthsCovered >= emergencyFundMonthsTarget) {
+                    emergencyStatusHtml = `<span class="text-success fw-bold">ممتاز جداً (${monthsCovered} شهر مغطى) ✅</span>`;
+                } else if (monthsCovered >= emergencyFundMonthsTarget / 2) {
+                    emergencyStatusHtml = `<span class="text-warning fw-bold">مقبول ولكن ضعيف (${monthsCovered} شهر مغطى) ⚠️</span>`;
+                } else {
+                    emergencyStatusHtml = `<span class="text-danger fw-bold">حرج للغاية! يغطي فقط (${monthsCovered} شهر) 🚨</span>`;
+                }
+            } else {
+                emergencyStatusHtml = `<span class="text-muted">لا توجد مصروفات دورية مسجلة للقياس</span>`;
+            }
+
+            container.innerHTML = `
+                <div class="col-md-6 border-end border-light">
+                    <div class="p-2">
+                        <h6 class="small text-muted fw-bold">مؤشر عبء الديون الكلي (DTI Ratio):</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4 ${dtiClass}">${dti}%</span>
+                            <span class="badge ${dti > targetDti ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success'} py-1 px-2">${dtiStatus}</span>
+                        </div>
+                        <p class="small text-muted mb-0 mt-1">تلتهم التزاماتك الحالية (${dti}%) من إيراداتك الإجمالية المخططة (الحد الأقصى المستهدف: ${targetDti}%).</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-2">
+                        <h6 class="small text-muted fw-bold">مؤشر وقاية الطوارئ والأمان المعيشي:</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-5">${emergencyStatusHtml}</span>
+                        </div>
+                        <p class="small text-muted mb-0 mt-1">يقوم بقياس كفاية الكاش والأصول الإجمالية (${totalAssets.toLocaleString()} ${getCurrency()}) لتغطية المصروفات الثابتة المعيشية لـ ${emergencyFundMonthsTarget} أشهر.</p>
+                    </div>
+                </div>
+            `;
         }
 
+        // ======================== SYSTEM SETTINGS & METADATA ========================
+        function updateWorkspaceMeta() {
+            if (!checkActionPermission('owner_only')) {
+                document.getElementById('set_workspace_name').value = window.workspaceMeta.name;
+                document.getElementById('set_currency_symbol').value = window.workspaceMeta.currency;
+                document.getElementById('set_alert_days').value = window.workspaceMeta.alertDays;
+                document.getElementById('set_emergency_months').value = window.workspaceMeta.emergencyMonths;
+                document.getElementById('set_max_dti').value = window.workspaceMeta.maxDti;
+                return;
+            }
+
+            window.workspaceMeta.name = document.getElementById('set_workspace_name').value.trim() || "Egyup Cloud System";
+            window.workspaceMeta.currency = document.getElementById('set_currency_symbol').value.trim() || "ج";
+            window.workspaceMeta.alertDays = parseInt(document.getElementById('set_alert_days').value) || 3;
+            window.workspaceMeta.emergencyMonths = parseInt(document.getElementById('set_emergency_months').value) || 6;
+            window.workspaceMeta.maxDti = parseInt(document.getElementById('set_max_dti').value) || 40;
+
+            document.getElementById('workspaceTitleDisplay').textContent = window.workspaceMeta.name;
+
+            if (window.saveWorkspaceConfigToCloud) {
+                window.saveWorkspaceConfigToCloud();
+            }
+
+            calculateFinanceReport();
+            calculateGlobalOverview();
+        }
+        window.updateWorkspaceMeta = updateWorkspaceMeta;
+
+        function renderTeamMembersList() {
+            const tbody = document.getElementById('teamMembersListBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const members = window.workspaceMeta.members || [];
+            if (members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-muted small py-3">لم تقم بمشاركة هذا الحساب مع أعضاء آخرين بعد.</td></tr>`;
+                return;
+            }
+
+            members.forEach((member, idx) => {
+                let roleText = member.role === 'Manager' ? 'المدير المالي (تحكم كامل)' : 'مشاهد (قراءة فقط)';
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${member.name}</b></td>
+                        <td><code class="user-select-all">${member.uid}</code></td>
+                        <td><span class="badge ${member.role==='Manager'?'bg-warning text-dark':'bg-secondary'}">${roleText}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-danger write-action" onclick="removeTeamMember(${idx})"><i class="bi bi-person-x-fill"></i> طرد</button>
+                        </td>
+                    </tr>`;
+            });
+            
+            if (window.userRole !== 'Owner') {
+                document.querySelectorAll('.write-action').forEach(b => b.classList.add('role-restricted'));
+            }
+        }
+        window.renderTeamMembersList = renderTeamMembersList;
+
+        function addNewTeamMember() {
+            if (!checkActionPermission('owner_only')) return;
+
+            const name = document.getElementById('new_member_name').value.trim();
+            const uid = document.getElementById('new_member_uid').value.trim();
+            const role = document.getElementById('new_member_role').value;
+
+            if (!name || !uid) {
+                showCustomAlert("يرجى ملء كافة بيانات العضو بشكل صحيح لتسهيل الاتصال.", "حقول غير مكتملة");
+                return;
+            }
+
+            if (!window.workspaceMeta.members) window.workspaceMeta.members = [];
+
+            if (window.workspaceMeta.members.some(m => m.uid === uid)) {
+                showCustomAlert("هذا العضو مسجل بالفعل في فريق عملك مسبقاً.", "عضو مكرر");
+                return;
+            }
+
+            window.workspaceMeta.members.push({ name, uid, role });
+            
+            if (window.saveWorkspaceConfigToCloud) window.saveWorkspaceConfigToCloud();
+
+            document.getElementById('new_member_name').value = '';
+            document.getElementById('new_member_uid').value = '';
+            
+            showCustomAlert(`✅ تم إضافة العضو: ${name} بنجاح كـ ${role==='Manager'?'مدير':'مشاهد'} لميزانيتك.`, "نجاح");
+            renderTeamMembersList();
+        }
+        window.addNewTeamMember = addNewTeamMember;
+
+        function removeTeamMember(idx) {
+            if (!checkActionPermission('owner_only')) return;
+
+            const memberName = window.workspaceMeta.members[idx].name;
+            showCustomConfirm(`هل أنت متأكد من إلغاء الاتصال وطرد العضو: ${memberName} من فريق العمل ومساحة الحساب؟`, () => {
+                window.workspaceMeta.members.splice(idx, 1);
+                if (window.saveWorkspaceConfigToCloud) window.saveWorkspaceConfigToCloud();
+                renderTeamMembersList();
+                showCustomAlert("تم طرد العضو وإلغاء صلاحية الوصول السحابية فوراً.", "تم الحذف");
+            });
+        }
+        window.removeTeamMember = removeTeamMember;
+
+        // ======================== HELPER FINANCIAL FUNCTIONS ========================
         function convertToLocalDate(d) { return d ? new Date(d).toLocaleDateString('ar-EG') : ''; }
 
         function calculateCreditCardDueDate(pd) {
@@ -936,19 +1468,12 @@ const firebaseConfig = {
             calculateFinanceReport();
             calculateGlobalOverview();
         }
+        window.toggleTheme = toggleTheme;
 
         function destroyAllCharts() {
             if (chartInstanceBar) { chartInstanceBar.destroy(); chartInstanceBar = null; }
             if (chartInstanceDoughnut) { chartInstanceDoughnut.destroy(); chartInstanceDoughnut = null; }
             if (chartInstanceNetWorth) { chartInstanceNetWorth.destroy(); chartInstanceNetWorth = null; }
-        }
-
-        // مزامنة الـ LocalStorage للحالات غير المتصلة كنسخة احتياطية
-        function backupDataLocally() {
-            localStorage.setItem('egyup_raw_data_v2', JSON.stringify(appData));
-            if (window.saveAppDataToCloud) {
-                window.saveAppDataToCloud();
-            }
         }
 
         function validateImportData(data) {
@@ -958,132 +1483,119 @@ const firebaseConfig = {
                 Array.isArray(data.scheduledDebts) && Array.isArray(data.goals);
         }
 
+        // ======================== ALERTS & NOTIFICATIONS ========================
         function showAutoAlerts() {
-            let now = new Date(); let todayDay = now.getDate(); let html = ''; let has = false;
-            appData.installments.forEach(item => {
+            let now = new Date(); 
+            let todayDay = now.getDate(); 
+            let html = ''; 
+            let has = false;
+            
+            const alertDaysLimit = window.workspaceMeta.alertDays || 3;
+
+            window.appData.installments.forEach(item => {
                 let total = parseInt(item.totalCount)||0, paid = parseInt(item.paidCount)||0, monthly = parseFloat(item.monthlyAmount)||0;
                 for (let i=paid; i<total; i++) {
                     let due = new Date(addMonthsToDateStr(item.startDate, i));
                     let days = calculateDaysLeft(due);
-                    if (days >=0 && days <=3) {
+                    if (days >= 0 && days <= alertDaysLimit) {
                         has = true;
-                        html += `<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle-fill"></i> قسط <b>${item.entity}</b> بقيمة <b>${monthly.toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                        html += `<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle-fill"></i> قسط <b>${item.entity}</b> بقيمة <b>${monthly.toLocaleString()} ${getCurrency()}</b> ${days===0?'يستحق اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
                     }
                 }
             });
-            appData.cards.forEach(item => {
+            
+            window.appData.cards.forEach(item => {
                 let due = calculateCreditCardDueDate(item.purchaseDate);
                 let days = calculateDaysLeft(due);
-                if (days >=0 && days <=5) {
+                if (days >= 0 && days <= alertDaysLimit) {
                     has = true;
-                    html += `<div class="alert alert-danger py-2"><i class="bi bi-credit-card-fill"></i> كارت <b>${item.bank} - ${item.cardName}</b> بقيمة <b>${parseFloat(item.requiredAmount).toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                    html += `<div class="alert alert-danger py-2"><i class="bi bi-credit-card-fill"></i> كارت <b>${item.bank} - ${item.cardName}</b> بقيمة <b>${parseFloat(item.requiredAmount).toLocaleString()} ${getCurrency()}</b> ${days===0?'يستحق اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
                 }
             });
-            appData.recurring.forEach(item => {
+            
+            window.appData.recurring.forEach(item => {
                 if (parseInt(item.day) === todayDay) {
                     has = true;
-                    html += `<div class="alert alert-info py-2"><i class="bi bi-receipt"></i> اليوم موعد سداد <b>${item.category}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b></div>`;
+                    html += `<div class="alert alert-info py-2"><i class="bi bi-receipt"></i> اليوم موعد سداد مصروف دوري: <b>${item.category}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ${getCurrency()}</b></div>`;
                 }
             });
-            appData.scheduledDebts.forEach(item => {
+            
+            window.appData.scheduledDebts.forEach(item => {
                 let due = new Date(item.dueDate);
                 let days = calculateDaysLeft(due);
-                if (days >=0 && days <=3) {
+                if (days >= 0 && days <= alertDaysLimit) {
                     has = true;
-                    html += `<div class="alert alert-dark py-2"><i class="bi bi-calendar-x"></i> دين مجدول <b>${item.description}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ج</b> ${days===0?'اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
+                    html += `<div class="alert alert-dark py-2"><i class="bi bi-calendar-x"></i> دين مجدول <b>${item.description}</b> بقيمة <b>${parseFloat(item.amount).toLocaleString()} ${getCurrency()}</b> ${days===0?'يستحق اليوم':'خلال '+days+' أيام'} (${convertToLocalDate(due)})</div>`;
                 }
             });
+            
             if (has) {
                 document.getElementById('alertsModalBody').innerHTML = html;
                 new bootstrap.Modal(document.getElementById('alertsModal')).show();
             }
         }
+        window.showAutoAlerts = showAutoAlerts;
 
-        // ======================== NOTIFICATION SYSTEM ========================
         function requestNotificationPermission() {
             if (!('Notification' in window)) {
-                showCustomAlert('متصفحك لا يدعم الإشعارات');
+                showCustomAlert('متصفحك لا يدعم الإشعارات الفورية');
                 return;
             }
             if (Notification.permission === 'granted') {
                 notificationsEnabled = true;
-                showCustomAlert('التنبيهات مفعلة بالفعل! ستتلقى تذكيرات للأقساط والبطاقات المستحقة قريباً.');
+                showCustomAlert('الإشعارات مفعلة بالفعل! سنرسل لك تذكيرات دورية بالالتزامات العاجلة للعملة.');
                 updateNotificationBadge();
                 startNotificationChecker();
             } else if (Notification.permission === 'denied') {
-                showCustomAlert('تم رفض الإشعارات. يمكنك تغيير الإعدادات من إعدادات المتصفح.');
+                showCustomAlert('تم تعطيل الإشعارات مسبقاً. يرجى تفعيلها يدوياً من إعدادات المتصفح.');
             } else {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         notificationsEnabled = true;
-                        showCustomAlert('تم تفعيل التنبيهات بنجاح!');
+                        showCustomAlert('تم تفعيل إشعارات ميزانية Egyup بنجاح!');
                         updateNotificationBadge();
                         startNotificationChecker();
-                    } else {
-                        showCustomAlert('لم يتم تفعيل التنبيهات.');
                     }
                 });
             }
         }
+        window.requestNotificationPermission = requestNotificationPermission;
 
         function checkUpcomingDues() {
             if (!notificationsEnabled && Notification.permission !== 'granted') return;
             
-            const today = new Date();
-            today.setHours(0,0,0,0);
+            const alertDaysLimit = window.workspaceMeta.alertDays || 3;
             const upcomingItems = [];
 
-            // فحص الأقساط
-            appData.installments.forEach(item => {
+            window.appData.installments.forEach(item => {
                 const total = parseInt(item.totalCount)||0;
                 const paid = parseInt(item.paidCount)||0;
                 const monthly = parseFloat(item.monthlyAmount)||0;
                 for (let i = paid; i < total; i++) {
                     const due = new Date(addMonthsToDateStr(item.startDate, i));
                     const diff = calculateDaysLeft(due);
-                    if (diff >= 0 && diff <= 2) {
-                        upcomingItems.push({
-                            type: 'قسط',
-                            name: item.entity,
-                            amount: monthly,
-                            due: convertToLocalDate(due),
-                            diff
-                        });
+                    if (diff >= 0 && diff <= alertDaysLimit) {
+                        upcomingItems.push({ type: 'قسط', name: item.entity, amount: monthly });
                     }
                 }
             });
 
-            // فحص البطاقات
-            appData.cards.forEach(item => {
+            window.appData.cards.forEach(item => {
                 const due = calculateCreditCardDueDate(item.purchaseDate);
                 const diff = calculateDaysLeft(due);
-                if (diff >= 0 && diff <= 2) {
-                    upcomingItems.push({
-                        type: 'بطاقة ائتمان',
-                        name: `${item.bank} - ${item.cardName}`,
-                        amount: parseFloat(item.requiredAmount)||0,
-                        due: convertToLocalDate(due),
-                        diff
-                    });
+                if (diff >= 0 && diff <= alertDaysLimit) {
+                    upcomingItems.push({ type: 'بطاقة ائتمان', name: `${item.bank} - ${item.cardName}`, amount: parseFloat(item.requiredAmount)||0 });
                 }
             });
 
-            // فحص الديون المجدولة
-            appData.scheduledDebts.forEach(item => {
+            window.appData.scheduledDebts.forEach(item => {
                 const due = new Date(item.dueDate);
                 const diff = calculateDaysLeft(due);
-                if (diff >= 0 && diff <= 2) {
-                    upcomingItems.push({
-                        type: 'دين مجدول',
-                        name: item.description,
-                        amount: parseFloat(item.amount)||0,
-                        due: convertToLocalDate(due),
-                        diff
-                    });
+                if (diff >= 0 && diff <= alertDaysLimit) {
+                    upcomingItems.push({ type: 'دين مجدول', name: item.description, amount: parseFloat(item.amount)||0 });
                 }
             });
 
-            // تحديث العداد على الأيقونة
             const badge = document.getElementById('notificationBadge');
             if (badge) {
                 if (upcomingItems.length > 0) {
@@ -1094,113 +1606,31 @@ const firebaseConfig = {
                 }
             }
 
-            // إرسال إشعار مجمع
             if (upcomingItems.length > 0 && notificationsEnabled) {
                 const totalAmount = upcomingItems.reduce((sum, item) => sum + item.amount, 0);
-                const message = `لديك ${upcomingItems.length} التزامات مستحقة خلال يومين بقيمة ${totalAmount.toLocaleString()} ج.`;
+                const message = `لديك عدد ${upcomingItems.length} التزامات مستحقة عاجلة بقيمة إجمالية ${totalAmount.toLocaleString()} ${getCurrency()}.`;
                 
-                new Notification('📌 تذكير مالي من Egyup', {
+                new Notification('📌 إشعار مالي عاجل - Egyup', {
                     body: message,
                     icon: 'https://i.ibb.co/9mj4x6NH/Chat-GPT-Image-26-2026-06-28-40.png',
-                    tag: 'egyup-dues',
+                    tag: 'egyup-dues-alert',
                     requireInteraction: true
                 });
             }
         }
 
         function startNotificationChecker() {
+            checkUpcomingDues();
             if (notificationInterval) clearInterval(notificationInterval);
-            checkUpcomingDues(); // فحص فوري
-            notificationInterval = setInterval(checkUpcomingDues, 900000); // كل 15 دقيقة
-        }
-
-        function stopNotificationChecker() {
-            if (notificationInterval) {
-                clearInterval(notificationInterval);
-                notificationInterval = null;
-            }
-        }
-
-        function initNotifications() {
-            if (Notification.permission === 'granted') {
-                notificationsEnabled = true;
-                updateNotificationBadge();
-                startNotificationChecker();
-            }
+            notificationInterval = setInterval(checkUpcomingDues, 900000); 
         }
 
         function updateNotificationBadge() {
             checkUpcomingDues();
         }
+        window.updateNotificationBadge = updateNotificationBadge;
 
-        // المودال السحابي المطور ومزايا ربط الحسابات
-        function showCloudSyncModal() {
-            new bootstrap.Modal(document.getElementById('cloudModal')).show();
-        }
-
-        function copyMyCloudId() {
-            const input = document.getElementById('myCloudIdField');
-            input.select();
-            input.setSelectionRange(0, 99999); // للهواتف الذكية
-            
-            // استخدام الأمر المتوافق مع المتصفحات (Rule - IFrame Clipboard fallback)
-            document.execCommand('copy');
-            showCustomAlert("تم نسخ كود الحساب السحابي بنجاح! يمكنك مشاركته مع أجهزتك الأخرى.", "تم النسخ");
-        }
-
-        function connectToCustomCloudId() {
-            const code = document.getElementById('targetCloudIdInput').value.trim();
-            if (!code || code.length < 5) {
-                showCustomAlert("يرجى إدخال كود حساب سحابي صحيح أولاً.", "خطأ");
-                return;
-            }
-
-            showCustomConfirm(`هل أنت متأكد من ربط هذا التطبيق بالحساب: ${code}؟ سيتم تحميل البيانات الخاصة به واستبدال الواجهة الحالية.`, () => {
-                localStorage.setItem('egyup_custom_user_id', code);
-                showCustomAlert("تم الحفظ! سيتم إعادة تحميل النظام للبدء بالمزامنة اللحظية للحساب الجديد.", "نجاح");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            });
-        }
-
-        function initializeApp() {
-            let now = new Date();
-            document.getElementById('filterMonth').value = now.getMonth() + 1;
-            document.getElementById('filterYear').value = now.getFullYear();
-            
-            // الترحيل من الذاكرة المحلية أول تشغيل
-            let raw = localStorage.getItem('egyup_raw_data_v2');
-            if (raw) {
-                try { appData = JSON.parse(raw); } catch(e){}
-            }
-
-            renderAllModulesTables();
-            renderGoals();
-            calculateFinanceReport();
-            calculateGlobalOverview();
-            loadMemoData();
-            showRandomTip();
-            showAutoAlerts();
-            updateNetWorthHistory();
-            initNotifications(); 
-            setTimeout(() => { new bootstrap.Modal(document.getElementById('prayerModal')).show(); }, 600);
-        }
-
-        function filterTable(type) {
-            let sid='', tid='';
-            if (type==='installments') { sid='searchInstallments'; tid='installmentsTableBody'; }
-            else if (type==='recurring') { sid='searchRecurring'; tid='recurringTableBody'; }
-            else if (type==='cards') { sid='searchCards'; tid='cardsTableBody'; }
-            else if (type==='income') { sid='searchIncome'; tid='incomeTableBody'; }
-            else if (type==='savings') { sid='searchSavings'; tid='savingsTableBody'; }
-            else if (type==='scheduledDebts') { sid='searchScheduledDebts'; tid='scheduledDebtsTableBody'; }
-            if (!sid || !tid) return;
-            let q = document.getElementById(sid).value.toLowerCase();
-            let rows = document.getElementById(tid).getElementsByTagName('tr');
-            for (let r of rows) r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-        }
-
+        // ======================== ASSETS & TABLE RENDERING ========================
         function getAssetFinancialValue(item) {
             if (item.assetType === 'gold' || item.assetType === 'silver') {
                 return (parseFloat(item.currentAmount)||0) * (parseFloat(item.currentPricePerGram)||0);
@@ -1209,142 +1639,226 @@ const firebaseConfig = {
         }
 
         function renderAllModulesTables() {
-            let ib = document.getElementById('installmentsTableBody'); ib.innerHTML = '';
+            let ib = document.getElementById('installmentsTableBody'); 
+            if (!ib) return;
+            ib.innerHTML = '';
             let totalRem=0, totalPaid=0;
-            if (appData.installments.length===0) ib.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-credit-card-2-front"></i><p>لا توجد أقساط مسجلة بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div></td></tr>`;
-            else appData.installments.forEach((item, idx) => {
-                let paid = parseInt(item.paidCount)||0, total = parseInt(item.totalCount)||0;
-                let monthly = parseFloat(item.monthlyAmount)||0, totalAmt = parseFloat(item.totalAmount)||0;
-                let rem = Math.max(0, totalAmt - (monthly*paid));
-                totalRem += rem; totalPaid += monthly*paid;
-                let next = paid<total ? addMonthsToDateStr(item.startDate, paid) : 'مكتمل';
-                let prog = total>0 ? Math.round((paid/total)*100) : 0;
-                ib.innerHTML += `<tr><td><b>${item.entity}</b></td><td>${totalAmt.toLocaleString()} ج</td><td class="text-primary fw-bold">${monthly.toLocaleString()} ج</td><td><span class="badge bg-dark">${paid} / ${total}</span></td><td class="text-danger fw-bold">${rem.toLocaleString()} ج</td><td><div class="progress" style="height:8px;"><div class="progress-bar bg-success" style="width:${prog}%"></div></div><small>${prog}%</small></td><td><span class="badge ${next==='مكتمل'?'bg-success':'bg-warning text-dark'}">${next==='مكتمل'?'✅ مكتمل':convertToLocalDate(next)}</span></td><td><button class="btn btn-sm btn-outline-success px-2 py-0" onclick="incrementInstallment(${idx})">+1</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('installment',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('installment',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
-            });
-            document.getElementById('installmentsSummaryCard').innerHTML = `💡 إجمالي الأقساط المسددة: <b>${totalPaid.toLocaleString()} ج</b> | المتبقي الكلي: <b class="text-danger">${totalRem.toLocaleString()} ج</b>`;
+            
+            if (window.appData.installments.length===0) {
+                ib.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-credit-card-2-front"></i><p>لا توجد أقساط مسجلة بعد</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('installment')"><i class="bi bi-plus-circle"></i> إضافة قسط جديد</button></div></td></tr>`;
+            } else {
+                window.appData.installments.forEach((item, idx) => {
+                    let paid = parseInt(item.paidCount)||0, total = parseInt(item.totalCount)||0;
+                    let monthly = parseFloat(item.monthlyAmount)||0, totalAmt = parseFloat(item.totalAmount)||0;
+                    let rem = Math.max(0, totalAmt - (monthly*paid));
+                    totalRem += rem; totalPaid += monthly*paid;
+                    let next = paid<total ? addMonthsToDateStr(item.startDate, paid) : 'مكتمل';
+                    let prog = total>0 ? Math.round((paid/total)*100) : 0;
+                    
+                    ib.innerHTML += `
+                        <tr>
+                            <td><b>${item.entity}</b></td>
+                            <td>${totalAmt.toLocaleString()} ${getCurrency()}</td>
+                            <td class="text-primary fw-bold">${monthly.toLocaleString()} ${getCurrency()}</td>
+                            <td><span class="badge bg-dark">${paid} / ${total}</span></td>
+                            <td class="text-danger fw-bold">${rem.toLocaleString()} ${getCurrency()}</td>
+                            <td>
+                                <div class="progress" style="height:8px;">
+                                    <div class="progress-bar bg-success" style="width:${prog}%"></div>
+                                </div>
+                                <small>${prog}%</small>
+                            </td>
+                            <td><span class="badge ${next==='مكتمل'?'bg-success':'bg-warning text-dark'}">${next==='مكتمل'?'✅ مكتمل':convertToLocalDate(next)}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success px-2 py-0 write-action" onclick="incrementInstallment(${idx})">+1</button> 
+                                <button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('installment',${idx})"><i class="bi bi-pencil"></i></button> 
+                                <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('installment',${idx})"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            }
+            document.getElementById('installmentsSummaryCard').innerHTML = `💡 إجمالي الأقساط المسددة: <b>${totalPaid.toLocaleString()} ${getCurrency()}</b> | المتبقي الكلي للجهات: <b class="text-danger">${totalRem.toLocaleString()} ${getCurrency()}</b>`;
 
             let rb = document.getElementById('recurringTableBody'); rb.innerHTML = '';
-            if (appData.recurring.length===0) rb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-receipt-cutoff"></i><p>لا توجد مصروفات دورية</p><button class="btn btn-sm btn-success" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف</button></div></td></tr>`;
-            else appData.recurring.forEach((item, idx) => { let nd = getNextDateForSpecificDay(item.day); rb.innerHTML += `<tr><td>${item.category}</td><td class="fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day}</td><td>${convertToLocalDate(nd)}</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('recurring',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('recurring',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            if (window.appData.recurring.length===0) {
+                rb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-receipt-cutoff"></i><p>لا توجد مصروفات دورية مسجلة</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('recurring')"><i class="bi bi-plus-circle"></i> إضافة مصروف</button></div></td></tr>`;
+            } else {
+                window.appData.recurring.forEach((item, idx) => { 
+                    let nd = getNextDateForSpecificDay(item.day); 
+                    rb.innerHTML += `<tr><td>${item.category}</td><td class="fw-bold">${parseFloat(item.amount).toLocaleString()} ${getCurrency()}</td><td>يوم ${item.day}</td><td>${convertToLocalDate(nd)}</td><td><button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('recurring',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('recurring',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; 
+                });
+            }
 
             let cb = document.getElementById('cardsTableBody'); cb.innerHTML = '';
-            if (appData.cards.length===0) cb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-credit-card"></i><p>لا توجد مديونيات بطاقات</p><button class="btn btn-sm btn-success" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية</button></div></td></tr>`;
-            else appData.cards.forEach((item, idx) => { let due = calculateCreditCardDueDate(item.purchaseDate); let days = calculateDaysLeft(due); cb.innerHTML += `<tr><td><b>${item.bank}</b></td><td>${item.cardName}</td><td>${convertToLocalDate(item.purchaseDate)}</td><td class="text-danger fw-bold">${parseFloat(item.requiredAmount).toLocaleString()} ج</td><td>${convertToLocalDate(due)}</td><td><span class="badge ${days<3?'bg-danger':'bg-success'}">${days<0?'متأخر':days+' يوم أمان'}</span></td><td><button class="btn btn-sm btn-outline-primary px-2 py-0" onclick="clearCardDebt(${idx})">✅ تم الدفع</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('card',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('card',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            if (window.appData.cards.length===0) {
+                cb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-credit-card"></i><p>لا توجد مديونيات كروت مسجلة</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('card')"><i class="bi bi-plus-circle"></i> إضافة مديونية كارت</button></div></td></tr>`;
+            } else {
+                window.appData.cards.forEach((item, idx) => { 
+                    let due = calculateCreditCardDueDate(item.purchaseDate); 
+                    let days = calculateDaysLeft(due); 
+                    cb.innerHTML += `<tr><td><b>${item.bank}</b></td><td>${item.cardName}</td><td>${convertToLocalDate(item.purchaseDate)}</td><td class="text-danger fw-bold">${parseFloat(item.requiredAmount).toLocaleString()} ${getCurrency()}</td><td>${convertToLocalDate(due)}</td><td><span class="badge ${days<3?'bg-danger':'bg-success'}">${days<0?'متأخر':days+' يوم أمان'}</span></td><td><button class="btn btn-sm btn-outline-primary px-2 py-0 write-action" onclick="clearCardDebt(${idx})">✅ تم السداد</button> <button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('card',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('card',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; 
+                });
+            }
 
             let inb = document.getElementById('incomeTableBody'); inb.innerHTML = '';
-            if (appData.income.length===0) inb.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="bi bi-cash-stack"></i><p>لا توجد مصادر دخل مسجلة</p><button class="btn btn-sm btn-success" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة دخل</button></div></td></tr>`;
-            else appData.income.forEach((item, idx) => { inb.innerHTML += `<tr><td>${item.source}</td><td class="text-success fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>يوم ${item.day} شهرياً</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('income',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('income',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            if (window.appData.income.length===0) {
+                inb.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="bi bi-cash-stack"></i><p>لا توجد مصادر دخل مسجلة</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('income')"><i class="bi bi-plus-circle"></i> إضافة دخل</button></div></td></tr>`;
+            } else {
+                window.appData.income.forEach((item, idx) => { 
+                    inb.innerHTML += `<tr><td>${item.source}</td><td class="text-success fw-bold">${parseFloat(item.amount).toLocaleString()} ${getCurrency()}</td><td>يوم ${item.day} شهرياً</td><td><button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('income',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('income',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; 
+                });
+            }
 
             let sb = document.getElementById('savingsTableBody'); sb.innerHTML = '';
-            if (appData.savings.length===0) sb.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-safe2"></i><p>لا توجد أصول أو مدخرات بعد</p><button class="btn btn-sm btn-success" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل جديد</button></div></td></tr>`;
-            else appData.savings.forEach((item, idx) => {
-                let assetType = item.assetType || 'cash';
-                let tgt = parseFloat(item.targetAmount)||0;
-                let finValue = getAssetFinancialValue(item);
-                let purchasePrice = parseFloat(item.purchasePrice)||0;
-                let purchaseDate = item.purchaseDate ? convertToLocalDate(item.purchaseDate) : '-';
-                let pct = tgt>0 ? Math.min(100, Math.round((finValue/tgt)*100)) : 100;
-                let badgeColor = assetType==='gold'?'bg-warning text-dark':(assetType==='silver'?'bg-light text-dark border':'bg-primary');
-                let purityText = assetType==='gold'?` عيار ${item.karat||24}`:(assetType==='silver'?` عيار ${item.silverPurity||'999'}`:'');
-                let assetName = assetType==='gold'?`ذهب${purityText}`:(assetType==='silver'?`فضة${purityText}`:'كاش');
-                let priceInfo = (assetType==='gold'||assetType==='silver')?`<br><small class="text-muted">سعر الجرام: ${(parseFloat(item.currentPricePerGram)||0).toLocaleString()} ج</small>`:'';
-                let purchaseInfo = assetType==='cash'?'-':(purchasePrice>0?purchasePrice.toLocaleString()+' ج':'-');
-                let profitHtml = '';
-                if (assetType!=='cash' && purchasePrice>0) {
-                    let profit = finValue - purchasePrice;
-                    let profitClass = profit>=0?'text-success':'text-danger';
-                    let profitSign = profit>=0?'+':'';
-                    profitHtml = `<br><small class="${profitClass} fw-bold">${profitSign}${profit.toLocaleString()} ج</small>`;
-                }
-                let purchaseCell = assetType==='cash'?'-':`${purchaseInfo}${profitHtml}`;
-                let dateInfo = assetType==='cash'?'-':purchaseDate;
-                sb.innerHTML += `<tr><td><span class="badge ${badgeColor}">${assetName}</span></td><td><b>${item.goalName}</b>${priceInfo}</td><td>${tgt>0?tgt.toLocaleString()+' (مستهدف)':finValue.toLocaleString()}</td><td class="text-success fw-bold">${finValue.toLocaleString()} ج</td><td>${purchaseCell}</td><td>${dateInfo}</td><td>${tgt>0?`<div class="progress" style="height:8px;"><div class="progress-bar bg-info" style="width:${pct}%"></div></div><small>${pct}%</small>`:'<span class="text-muted">أصل عيني</span>'}</td><td><button class="btn btn-sm btn-outline-success px-2 py-0" onclick="quickDepositSavings(${idx})">➕ تعديل</button> <button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('savings',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('savings',${idx})"><i class="bi bi-trash"></i></button></td></tr>`;
-            });
+            if (window.appData.savings.length===0) {
+                sb.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-safe2"></i><p>لا توجد أصول أو مدخرات عينية مسجلة</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('savings')"><i class="bi bi-plus-circle"></i> إضافة أصل جديد</button></div></td></tr>`;
+            } else {
+                window.appData.savings.forEach((item, idx) => {
+                    let assetType = item.assetType || 'cash';
+                    let tgt = parseFloat(item.targetAmount)||0;
+                    let finValue = getAssetFinancialValue(item);
+                    let purchasePrice = parseFloat(item.purchasePrice)||0;
+                    let purchaseDate = item.purchaseDate ? convertToLocalDate(item.purchaseDate) : '-';
+                    let pct = tgt>0 ? Math.min(100, Math.round((finValue/tgt)*100)) : 100;
+                    let badgeColor = assetType==='gold'?'bg-warning text-dark':(assetType==='silver'?'bg-light text-dark border':'bg-primary text-white');
+                    let purityText = assetType==='gold'?` عيار ${item.karat||24}`:(assetType==='silver'?` عيار ${item.silverPurity||'999'}`:'');
+                    let assetName = assetType==='gold'?`ذهب${purityText}`:(assetType==='silver'?`فضة${purityText}`:'كاش مالي');
+                    let priceInfo = (assetType==='gold'||assetType==='silver')?`<br><small class="text-muted">سعر الجرام: ${(parseFloat(item.currentPricePerGram)||0).toLocaleString()} ${getCurrency()}</small>`:'';
+                    let purchaseInfo = assetType==='cash'?'-':(purchasePrice>0?purchasePrice.toLocaleString()+' '+getCurrency():'-');
+                    let profitHtml = '';
+                    if (assetType!=='cash' && purchasePrice>0) {
+                        let profit = finValue - purchasePrice;
+                        let profitClass = profit>=0?'text-success':'text-danger';
+                        let profitSign = profit>=0?'+':'';
+                        profitHtml = `<br><small class="${profitClass} fw-bold">${profitSign}${profit.toLocaleString()} ${getCurrency()}</small>`;
+                    }
+                    let purchaseCell = assetType==='cash'?'-':`${purchaseInfo}${profitHtml}`;
+                    let dateInfo = assetType==='cash'?'-':purchaseDate;
+                    
+                    sb.innerHTML += `
+                        <tr>
+                            <td><span class="badge ${badgeColor}">${assetName}</span></td>
+                            <td><b>${item.goalName}</b>${priceInfo}</td>
+                            <td>${tgt>0?tgt.toLocaleString()+' (مستهدف)':finValue.toLocaleString()}</td>
+                            <td class="text-success fw-bold">${finValue.toLocaleString()} ${getCurrency()}</td>
+                            <td>${purchaseCell}</td>
+                            <td>${dateInfo}</td>
+                            <td>${tgt>0?`<div class="progress" style="height:8px;"><div class="progress-bar bg-info" style="width:${pct}%"></div></div><small>${pct}%</small>`:'<span class="text-muted">أصل عيني مادي</span>'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success px-2 py-0 write-action" onclick="quickDepositSavings(${idx})">➕ رصيد</button> 
+                                <button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('savings',${idx})"><i class="bi bi-pencil"></i></button> 
+                                <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('savings',${idx})"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            }
 
             let sdb = document.getElementById('scheduledDebtsTableBody'); sdb.innerHTML = '';
-            if (appData.scheduledDebts.length===0) sdb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar-x"></i><p>لا توجد ديون مجدولة</p><button class="btn btn-sm btn-success" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div></td></tr>`;
-            else appData.scheduledDebts.forEach((item, idx) => { sdb.innerHTML += `<tr><td><b>${item.description}</b></td><td class="text-danger fw-bold">${parseFloat(item.amount).toLocaleString()} ج</td><td>${convertToLocalDate(item.dueDate)}</td><td class="text-muted small">${item.notes||'-'}</td><td><button class="btn btn-sm btn-outline-warning" onclick="editModuleItem('scheduledDebt',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteModuleItem('scheduledDebt',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; });
-        }
+            if (window.appData.scheduledDebts.length===0) {
+                sdb.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar-x"></i><p>لا توجد ديون مجدولة مسجلة</p><button class="btn btn-sm btn-success write-action" onclick="showFormModal('scheduledDebt')"><i class="bi bi-plus-circle"></i> إضافة دين مجدول</button></div></td></tr>`;
+            } else {
+                window.appData.scheduledDebts.forEach((item, idx) => { 
+                    sdb.innerHTML += `<tr><td><b>${item.description}</b></td><td class="text-danger fw-bold">${parseFloat(item.amount).toLocaleString()} ${getCurrency()}</td><td>${convertToLocalDate(item.dueDate)}</td><td class="text-muted small">${item.notes||'-'}</td><td><button class="btn btn-sm btn-outline-warning write-action" onclick="editModuleItem('scheduledDebt',${idx})"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteModuleItem('scheduledDebt',${idx})"><i class="bi bi-trash"></i></button></td></tr>`; 
+                });
+            }
 
-        // --- الأهداف ---
+            // تطبيق الصلاحيات بشكل آمن
+            if (window.applyPermissionsUI) {
+                window.applyPermissionsUI();
+            }
+        }
+        window.renderAllModulesTables = renderAllModulesTables;
+
+        // ======================== GOALS MANAGEMENT ========================
         function renderGoals() {
             const container = document.getElementById('goalsContainer');
             if (!container) return;
             container.innerHTML = '';
-            if (appData.goals.length === 0) {
-                container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-check2-square"></i><p>لا توجد أهداف حتى الآن</p><button class="btn btn-sm btn-success" onclick="showGoalFormModal()"><i class="bi bi-plus-circle"></i> أضف هدفك الأول</button></div>`;
+            if (window.appData.goals.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-check2-square"></i><p>لا توجد أهداف مخطط لها بعد</p><button class="btn btn-sm btn-success write-action" onclick="showGoalFormModal()"><i class="bi bi-plus-circle"></i> أضف هدفك المالي الأول</button></div>`;
+                if (window.applyPermissionsUI) window.applyPermissionsUI();
                 return;
             }
-            appData.goals.forEach((goal, idx) => {
+            window.appData.goals.forEach((goal, idx) => {
                 const completed = goal.completed || false;
                 const card = document.createElement('div');
                 card.className = `goal-card ${completed ? 'completed' : ''}`;
                 card.innerHTML = `
                     <div class="goal-actions">
-                        <button class="btn btn-sm btn-outline-warning" onclick="showGoalFormModal(${idx})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteGoal(${idx})"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-warning write-action" onclick="showGoalFormModal(${idx})"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger write-action" onclick="deleteGoal(${idx})"><i class="bi bi-trash"></i></button>
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <i class="bi ${completed ? 'bi-check-circle-fill text-success' : 'bi-circle'} goal-check" onclick="toggleGoal(${idx})"></i>
                         <span class="goal-title">${goal.title}</span>
                     </div>
                     <div class="goal-desc">${goal.description || '—'}</div>
-                    ${goal.dueDate ? `<div class="goal-due"><i class="bi bi-calendar-event"></i> ${convertToLocalDate(goal.dueDate)}</div>` : ''}
+                    ${goal.dueDate ? `<div class="goal-due"><i class="bi bi-calendar-event"></i> يستحق: ${convertToLocalDate(goal.dueDate)}</div>` : ''}
                 `;
                 container.appendChild(card);
             });
+            if (window.applyPermissionsUI) window.applyPermissionsUI();
         }
+        window.renderGoals = renderGoals;
 
         function showGoalFormModal(index = null) {
+            if (!checkActionPermission('write')) return;
+
             const isEdit = index !== null;
-            const goal = isEdit ? appData.goals[index] : {};
-            document.getElementById('formModalTitle').textContent = isEdit ? 'تعديل الهدف' : 'هدف جديد';
+            const goal = isEdit ? window.appData.goals[index] : {};
+            document.getElementById('formModalTitle').textContent = isEdit ? 'تعديل الهدف الشخصي' : 'أضف هدفاً طموحاً جديداً';
             const body = document.getElementById('formModalBody');
             body.innerHTML = `
-                <input type="text" id="goal_title" class="form-control mb-2" placeholder="عنوان الهدف" value="${goal.title||''}">
-                <textarea id="goal_desc" class="form-control mb-2" rows="2" placeholder="وصف مختصر">${goal.description||''}</textarea>
-                <label class="small text-muted">تاريخ الاستحقاق (اختياري):</label>
+                <input type="text" id="goal_title" class="form-control mb-2" placeholder="ما هو هدفك المالي؟ (شراء سيارة، حاسوب، شقة...)" value="${goal.title||''}">
+                <textarea id="goal_desc" class="form-control mb-2" rows="2" placeholder="وصف وتفاصيل إضافية للهدف">${goal.description||''}</textarea>
+                <label class="small text-muted">التاريخ المستهدف لإنجازه:</label>
                 <input type="date" id="goal_due" class="form-control mb-2" value="${goal.dueDate||''}">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="goal_completed" ${goal.completed?'checked':''}>
-                    <label class="form-check-label" for="goal_completed">مكتمل</label>
+                    <label class="form-check-label" for="goal_completed">لقد تم تحقيق هذا الهدف المالي بنجاح! 🎉</label>
                 </div>
             `;
             currentEditType = 'goal';
             currentEditIndex = index;
             document.getElementById('formModalSubmitBtn').onclick = () => {
                 const title = document.getElementById('goal_title').value.trim();
-                if (!title) { showCustomAlert('يرجى إدخال عنوان الهدف'); return; }
+                if (!title) { showCustomAlert('يرجى كتابة عنوان وهدف واضح!'); return; }
                 const goalObj = {
                     title,
                     description: document.getElementById('goal_desc').value.trim(),
                     dueDate: document.getElementById('goal_due').value,
                     completed: document.getElementById('goal_completed').checked
                 };
-                if (isEdit) appData.goals[index] = goalObj;
-                else appData.goals.push(goalObj);
+                if (isEdit) window.appData.goals[index] = goalObj;
+                else window.appData.goals.push(goalObj);
+                
                 backupDataLocally();
                 renderGoals();
                 bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
             };
             new bootstrap.Modal(document.getElementById('formModal')).show();
         }
+        window.showGoalFormModal = showGoalFormModal;
 
         function toggleGoal(idx) {
-            appData.goals[idx].completed = !appData.goals[idx].completed;
+            if (!checkActionPermission('write')) return;
+            window.appData.goals[idx].completed = !window.appData.goals[idx].completed;
             backupDataLocally();
             renderGoals();
         }
+        window.toggleGoal = toggleGoal;
 
         function deleteGoal(idx) {
-            showCustomConfirm("هل أنت متأكد من حذف هذا الهدف؟", () => {
-                appData.goals.splice(idx, 1);
+            if (!checkActionPermission('write')) return;
+            showCustomConfirm("هل تود حذف هذا الهدف من خطتك؟", () => {
+                window.appData.goals.splice(idx, 1);
                 backupDataLocally();
                 renderGoals();
             });
         }
-        // --- نهاية الأهداف ---
+        window.deleteGoal = deleteGoal;
 
+        // ======================== DASHBOARD REPORTING ========================
         function changeDashboardView(view) {
             activeView = view;
             document.getElementById('btnMonthly').classList.toggle('active', view==='monthly');
@@ -1353,130 +1867,160 @@ const firebaseConfig = {
             destroyAllCharts();
             calculateFinanceReport();
         }
+        window.changeDashboardView = changeDashboardView;
 
         function getDueStatus(dueDate) {
-            let today = new Date(); today.setHours(0,0,0,0);
             let due = new Date(dueDate); due.setHours(0,0,0,0);
             let diff = calculateDaysLeft(due);
             if (diff<0) return {text:'متأخر', class:'danger'};
             if (diff===0) return {text:'اليوم', class:'warning'};
-            if (diff<=3) return {text:`خلال ${diff} أيام`, class:'warning'};
-            return {text:'قادم', class:'info'};
+            if (diff<=3) return {text:`يستحق خلال ${diff} يوم`, class:'warning'};
+            return {text:'قادم لاحقاً', class:'info'};
         }
 
         function calculateFinanceReport() {
-            let selMonth = parseInt(document.getElementById('filterMonth').value);
-            let selYear = parseInt(document.getElementById('filterYear').value);
+            let filterMonthSelect = document.getElementById('filterMonth');
+            let filterYearInput = document.getElementById('filterYear');
+            if (!filterMonthSelect || !filterYearInput) return;
+
+            let selMonth = parseInt(filterMonthSelect.value);
+            let selYear = parseInt(filterYearInput.value);
             let totalIn=0, totalOutInstallments=0, totalOutRecurring=0, totalOutCards=0, totalOutScheduled=0;
-            let tableBody = document.querySelector('#dueTable tbody'); tableBody.innerHTML = '';
-            let alertBox = document.getElementById('todayAlertBox'); alertBox.innerHTML = '';
+            let tableBody = document.querySelector('#dueTable tbody'); 
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            let alertBox = document.getElementById('todayAlertBox'); 
+            if (alertBox) alertBox.innerHTML = '';
             let todayDay = new Date().getDate();
 
             if (activeView==='monthly') {
-                appData.income.forEach(item => totalIn += parseFloat(item.amount)||0);
-                appData.installments.forEach(item => {
+                window.appData.income.forEach(item => totalIn += parseFloat(item.amount)||0);
+                window.appData.installments.forEach(item => {
                     let total = parseInt(item.totalCount)||0, monthly = parseFloat(item.monthlyAmount)||0;
                     for (let i=0; i<total; i++) {
                         let due = new Date(addMonthsToDateStr(item.startDate, i));
                         if (due.getMonth()+1===selMonth && due.getFullYear()===selYear) {
                             totalOutInstallments += monthly;
                             let status = getDueStatus(due);
-                            tableBody.innerHTML += `<tr><td><span class="badge bg-danger">قسط شهري</span></td><td><b>${item.entity}</b> (القسط رقم ${i+1} من ${total})</td><td>${convertToLocalDate(due)}</td><td>${monthly.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                            tableBody.innerHTML += `<tr><td><span class="badge bg-danger">قسط شهري</span></td><td><b>${item.entity}</b> (رقم ${i+1} من ${total})</td><td>${convertToLocalDate(due)}</td><td>${monthly.toLocaleString()} ${getCurrency()}</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
                         }
                     }
                 });
-                appData.recurring.forEach(item => {
+                window.appData.recurring.forEach(item => {
                     let amt = parseFloat(item.amount)||0;
                     let due = getNextDateForSpecificDay(item.day);
                     if (due.getMonth()+1===selMonth && due.getFullYear()===selYear) {
                         totalOutRecurring += amt;
                         let status = getDueStatus(due);
-                        tableBody.innerHTML += `<tr><td><span class="badge bg-info">مصروف ثابت</span></td><td>${item.category}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                        tableBody.innerHTML += `<tr><td><span class="badge bg-info">مصروف ثابت</span></td><td>${item.category}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ${getCurrency()}</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
                     }
-                    if (parseInt(item.day)===todayDay) alertBox.innerHTML += `<div class="today-alert shadow-sm" style="border-right:4px solid var(--warning);background:var(--warning-soft);padding:14px 18px;border-radius:var(--radius-md);margin-bottom:16px;">🔔 <b>استحقاق اليوم:</b> سداد بند المصروفات الدوري (<b>${item.category}</b>) بقيمة <b>${amt.toLocaleString()} ج</b>.</div>`;
+                    if (parseInt(item.day)===todayDay && alertBox) {
+                        alertBox.innerHTML += `<div class="today-alert shadow-sm" style="border-right:4px solid var(--warning);background:var(--warning-soft);padding:14px 18px;border-radius:var(--radius-md);margin-bottom:16px;">💡 <b>استحقاق اليوم:</b> سداد بند المصروفات الدوري (<b>${item.category}</b>) بقيمة <b>${amt.toLocaleString()} ${getCurrency()}</b>.</div>`;
+                    }
                 });
-                appData.cards.forEach(item => {
+                window.appData.cards.forEach(item => {
                     let amt = parseFloat(item.requiredAmount)||0;
                     let due = calculateCreditCardDueDate(item.purchaseDate);
                     if (due.getMonth()+1===selMonth && due.getFullYear()===selYear) {
                         totalOutCards += amt;
                         let status = getDueStatus(due);
-                        tableBody.innerHTML += `<tr><td><span class="badge bg-warning text-dark">كارت ائتمان</span></td><td>مديونية بنك ${item.bank} - كارت ${item.cardName}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                        tableBody.innerHTML += `<tr><td><span class="badge bg-warning text-dark">كارت ائتمان</span></td><td>مديونية بنك ${item.bank} - كارت ${item.cardName}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ${getCurrency()}</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
                     }
                 });
-                appData.scheduledDebts.forEach(item => {
+                window.appData.scheduledDebts.forEach(item => {
                     let amt = parseFloat(item.amount)||0;
                     let due = new Date(item.dueDate);
                     if (due.getMonth()+1===selMonth && due.getFullYear()===selYear) {
                         totalOutScheduled += amt;
                         let status = getDueStatus(due);
-                        tableBody.innerHTML += `<tr><td><span class="badge bg-dark">دين مجدول</span></td><td>${item.description}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ج</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
+                        tableBody.innerHTML += `<tr><td><span class="badge bg-dark">دين مجدول</span></td><td>${item.description}</td><td>${convertToLocalDate(due)}</td><td>${amt.toLocaleString()} ${getCurrency()}</td><td><span class="badge bg-${status.class}">${status.text}</span></td></tr>`;
                     }
                 });
             } else {
-                appData.income.forEach(item => totalIn += (parseFloat(item.amount)||0)*12);
-                appData.recurring.forEach(item => totalOutRecurring += (parseFloat(item.amount)||0)*12);
-                appData.installments.forEach(item => {
+                window.appData.income.forEach(item => totalIn += (parseFloat(item.amount)||0)*12);
+                window.appData.recurring.forEach(item => totalOutRecurring += (parseFloat(item.amount)||0)*12);
+                window.appData.installments.forEach(item => {
                     let total = parseInt(item.totalCount)||0, monthly = parseFloat(item.monthlyAmount)||0;
                     for (let i=0; i<total; i++) {
                         let due = new Date(addMonthsToDateStr(item.startDate, i));
                         if (due.getFullYear()===selYear) totalOutInstallments += monthly;
                     }
                 });
-                appData.cards.forEach(item => { let amt = parseFloat(item.requiredAmount)||0; let due = calculateCreditCardDueDate(item.purchaseDate); if (due.getFullYear()===selYear) totalOutCards += amt; });
-                appData.scheduledDebts.forEach(item => { let amt = parseFloat(item.amount)||0; let due = new Date(item.dueDate); if (due.getFullYear()===selYear) totalOutScheduled += amt; });
+                window.appData.cards.forEach(item => { let amt = parseFloat(item.requiredAmount)||0; let due = calculateCreditCardDueDate(item.purchaseDate); if (due.getFullYear()===selYear) totalOutCards += amt; });
+                window.appData.scheduledDebts.forEach(item => { let amt = parseFloat(item.amount)||0; let due = new Date(item.dueDate); if (due.getFullYear()===selYear) totalOutScheduled += amt; });
             }
             let totalOutAll = totalOutInstallments+totalOutRecurring+totalOutCards+totalOutScheduled;
             let netSavings = totalIn - totalOutAll;
+            
             document.getElementById('statsContainer').innerHTML = `
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-success"><h6 style="color:var(--success);">💰 الدخل الإجمالي</h6><h4 class="fw-bold" style="color:var(--success);">${totalIn.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-danger"><h6 style="color:var(--danger);">💳 الأقساط المطلوب</h6><h4 class="fw-bold" style="color:var(--danger);">${totalOutInstallments.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-warning"><h6 style="color:#e0a800;">💳 مديونية الكروت</h6><h4 class="fw-bold" style="color:#e0a800;">${totalOutCards.toLocaleString()} ج</h4></div></div>
-            <div class="col-md-3 col-6"><div class="glass-card text-center border-info"><h6 style="color:var(--info);">🧾 فئات المصروفات</h6><h4 class="fw-bold" style="color:var(--info);">${totalOutRecurring.toLocaleString()} ج</h4></div></div>
-            <div class="col-12"><div class="glass-card text-center ${netSavings>=0?'border-primary':'border-dark'}"><h5>💵 صافي السيولة الفائضة أو العجز المتوقع بالفترة</h5><h3 class="fw-bold" style="color:${netSavings>=0?'var(--accent)':'var(--danger)'};">${netSavings.toLocaleString()} ج</h3>${netSavings>0?`<button class="btn btn-sm btn-success mt-2" onclick="quickSaveSurplus(${netSavings})"><i class="bi bi-safe2"></i> إيداع الفائض في الادخار</button>`:''}</div></div>`;
+                <div class="col-md-3 col-6"><div class="glass-card text-center border-success"><h6 style="color:var(--success);">💰 الدخل الإجمالي المخطط</h6><h4 class="fw-bold" style="color:var(--success);">${totalIn.toLocaleString()} ${getCurrency()}</h4></div></div>
+                <div class="col-md-3 col-6"><div class="glass-card text-center border-danger"><h6 style="color:var(--danger);">💳 عبء الأقساط الثابتة</h6><h4 class="fw-bold" style="color:var(--danger);">${totalOutInstallments.toLocaleString()} ${getCurrency()}</h4></div></div>
+                <div class="col-md-3 col-6"><div class="glass-card text-center border-warning"><h6 style="color:#e0a800;">💳 مديونيات كروت الفيزا</h6><h4 class="fw-bold" style="color:#e0a800;">${totalOutCards.toLocaleString()} ${getCurrency()}</h4></div></div>
+                <div class="col-md-3 col-6"><div class="glass-card text-center border-info"><h6 style="color:var(--info);">🧾 المصروفات الدورية</h6><h4 class="fw-bold" style="color:var(--info);">${totalOutRecurring.toLocaleString()} ${getCurrency()}</h4></div></div>
+                <div class="col-12">
+                    <div class="glass-card text-center ${netSavings>=0?'border-primary':'border-dark'}">
+                        <h5>💵 صافي السيولة الفائضة أو العجز المالي المتوقع بالفترة</h5>
+                        <h3 class="fw-bold" style="color:${netSavings>=0?'var(--accent)':'var(--danger)'};">${netSavings.toLocaleString()} ${getCurrency()}</h3>
+                        ${netSavings>0?`<button class="btn btn-sm btn-success mt-2 write-action" onclick="quickSaveSurplus(${netSavings})"><i class="bi bi-safe2"></i> إيداع الفائض بوعاء الادخار المالي</button>`:''}
+                    </div>
+                </div>`;
+                
             if (tableBody.innerHTML==='') tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">لا توجد أي التزامات مالية أو أقساط مستحقة خلال الفترة المحددة.</td></tr>`;
+            
             buildChartsLive(totalIn, totalOutAll, totalOutInstallments, totalOutRecurring, totalOutCards+totalOutScheduled);
             buildNetWorthChart();
-            showRandomTip();
+            
+            let grandTotalAssets = 0;
+            window.appData.savings.forEach(item => grandTotalAssets += getAssetFinancialValue(item));
+            runDynamicFinancialDiagnostic(totalIn, totalOutAll, grandTotalAssets);
         }
+        window.calculateFinanceReport = calculateFinanceReport;
 
         function quickSaveSurplus(amount) {
-            showCustomConfirm(`هل تريد إضافة الفائض ${amount.toLocaleString()} ج إلى صندوق ادخار جديد أو موجود؟`, () => showFormModal('savings'));
+            if (!checkActionPermission('write')) return;
+            showCustomConfirm(`هل تريد تحويل فائض السيولة المتاح بقيمة ${amount.toLocaleString()} ${getCurrency()} إلى وعاء ادخار مالي جديد؟`, () => showFormModal('savings'));
         }
+        window.quickSaveSurplus = quickSaveSurplus;
 
         function calculateGlobalOverview() {
             let grandTotalDebtOriginal=0, grandTotalDebtRemaining=0, grandTotalCardsDebt=0, grandTotalAssets=0, grandTotalScheduled=0;
-            appData.installments.forEach(item => {
+            window.appData.installments.forEach(item => {
                 let ta = parseFloat(item.totalAmount)||0, mo = parseFloat(item.monthlyAmount)||0, pa = parseInt(item.paidCount)||0;
                 grandTotalDebtOriginal += ta;
                 grandTotalDebtRemaining += Math.max(0, ta - (mo*pa));
             });
-            appData.cards.forEach(item => grandTotalCardsDebt += parseFloat(item.requiredAmount)||0);
-            appData.scheduledDebts.forEach(item => grandTotalScheduled += parseFloat(item.amount)||0);
+            window.appData.cards.forEach(item => grandTotalCardsDebt += parseFloat(item.requiredAmount)||0);
+            window.appData.scheduledDebts.forEach(item => grandTotalScheduled += parseFloat(item.amount)||0);
             let totalWhatYouOwe = grandTotalDebtRemaining + grandTotalCardsDebt + grandTotalScheduled;
-            appData.savings.forEach(item => grandTotalAssets += getAssetFinancialValue(item));
+            window.appData.savings.forEach(item => grandTotalAssets += getAssetFinancialValue(item));
             let netWorth = grandTotalAssets - totalWhatYouOwe;
             let totalDebtPaidSoFar = grandTotalDebtOriginal - grandTotalDebtRemaining;
             let debtProgressPercent = grandTotalDebtOriginal>0 ? Math.round((totalDebtPaidSoFar/grandTotalDebtOriginal)*100) : 100;
+            
             document.getElementById('globalOverviewCards').innerHTML = `
-            <div class="col-md-4"><div class="glass-card text-center border-success h-100"><h5 style="color:var(--success);">💰 إجمالي الأصول والمدخرات (اللى ليك)</h5><h3 class="fw-bold mt-2" style="color:var(--success);">${grandTotalAssets.toLocaleString()} ج</h3><p class="small text-muted mb-0">قيمة الصناديق، الكاش والأصول العينية (الذهب والفضة بسعر السوق الحالي)</p></div></div>
-            <div class="col-md-4"><div class="glass-card text-center border-danger h-100"><h5 style="color:var(--danger);">💸 الالتزامات والمديونيات الكلية (اللى عليك)</h5><h3 class="fw-bold mt-2" style="color:var(--danger);">${totalWhatYouOwe.toLocaleString()} ج</h3><p class="small text-muted mb-0">متبقي الأقساط (${grandTotalDebtRemaining.toLocaleString()} ج) + الكروت (${grandTotalCardsDebt.toLocaleString()} ج) + المجدولة (${grandTotalScheduled.toLocaleString()} ج)</p></div></div>
-            <div class="col-md-4"><div class="glass-card text-center ${netWorth>=0?'border-primary':'border-dark'} h-100"><h5>⚖️ الوضع المالي الصافي الحالي</h5><h2 class="fw-bold mt-2" style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};">${netWorth.toLocaleString()} ج</h2><p class="small text-muted mb-0">${netWorth>=0?'✅ موقفك المالي ممتاز (فائض أصولك يغطي ديونك)':'⚠️ عجز مالي مؤقت (مجموع الالتزامات الكلية أكبر من الكاش والأصول الحالية)'}</p></div></div>`;
-            document.getElementById('globalDebtProgressBar').innerHTML = `<div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width:${debtProgressPercent}%;border-radius:20px;">${debtProgressPercent}%</div>`;
-            document.getElementById('globalDebtProgressText').innerHTML = `لقد قمت بسداد سلفيات وأقساط بقيمة <b class="text-success">${totalDebtPaidSoFar.toLocaleString()} ج</b> من أصل مديونيات مسجلة كلياً بقيمة <b>${grandTotalDebtOriginal.toLocaleString()} ج</b>. المتبقي للجهات: <b class="text-danger">${grandTotalDebtRemaining.toLocaleString()} ج</b>`;
+                <div class="col-md-4"><div class="glass-card text-center border-success h-100"><h5 style="color:var(--success);">💰 إجمالي الأصول والادخار العيني (اللي ليك)</h5><h3 class="fw-bold mt-2" style="color:var(--success);">${grandTotalAssets.toLocaleString()} ${getCurrency()}</h3><p class="small text-muted mb-0">مجموع الصناديق، الكاش والذهب والفضة المحتسبين بسعر السوق الفعلي الحالي.</p></div></div>
+                <div class="col-md-4"><div class="glass-card text-center border-danger h-100"><h5 style="color:var(--danger);">💸 الالتزامات والمديونيات الكلية (اللي عليك)</h5><h3 class="fw-bold mt-2" style="color:var(--danger);">${totalWhatYouOwe.toLocaleString()} ${getCurrency()}</h3><p class="small text-muted mb-0">متبقي الأقساط الائتمانية للجهات + مديونية الكروت الفيزا + الديون المجدولة العاجلة.</p></div></div>
+                <div class="col-md-4"><div class="glass-card text-center ${netWorth>=0?'border-primary':'border-dark'} h-100"><h5>⚖️ الوضع المالي المركزي الصافي</h5><h2 class="fw-bold mt-2" style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};">${netWorth.toLocaleString()} ${getCurrency()}</h2><p class="small text-muted mb-0">${netWorth>=0?'✅ ميزانيتك في آمان (أصولك ومدخراتك تغطي الديون)':'⚠️ موقف مالي غير مستقر (الالتزامات الكلية أكبر من الكاش والأصول الحالية)'}</p></div></div>`;
+            
+            const pBar = document.getElementById('globalDebtProgressBar');
+            if (pBar) pBar.innerHTML = `<div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width:${debtProgressPercent}%;border-radius:20px;">${debtProgressPercent}% سداد</div>`;
+            const pText = document.getElementById('globalDebtProgressText');
+            if (pText) pText.innerHTML = `لقد تخلصت وسددت من ديونك الإجمالية المسجلة ما قيمته <b class="text-success">${totalDebtPaidSoFar.toLocaleString()} ${getCurrency()}</b> من أصل مديونيات كلية بقيمة <b>${grandTotalDebtOriginal.toLocaleString()} ${getCurrency()}</b>. المتبقي للجهات: <b class="text-danger">${grandTotalDebtRemaining.toLocaleString()} ${getCurrency()}</b>`;
+            
             updateNetWorthHistory();
         }
+        window.calculateGlobalOverview = calculateGlobalOverview;
 
         function updateNetWorthHistory() {
             let netWorth = 0;
-            appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
+            window.appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
             let totalDebt = 0;
-            appData.installments.forEach(item => {
+            window.appData.installments.forEach(item => {
                 let ta = parseFloat(item.totalAmount)||0, mo = parseFloat(item.monthlyAmount)||0, pa = parseInt(item.paidCount)||0;
                 totalDebt += Math.max(0, ta - (mo*pa));
             });
-            appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount)||0);
-            appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount)||0);
+            window.appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount)||0);
+            window.appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount)||0);
             let currentNet = netWorth - totalDebt;
             let history = JSON.parse(localStorage.getItem('egyup_networth_history') || '[]');
             let now = new Date();
@@ -1494,14 +2038,14 @@ const firebaseConfig = {
             let labelColor = isDark?'#e8e6f0':'#2d2b32';
             let history = JSON.parse(localStorage.getItem('egyup_networth_history')||'[]');
             if (history.length===0) {
-                let netWorth = 0; appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
+                let netWorth = 0; window.appData.savings.forEach(item => netWorth += getAssetFinancialValue(item));
                 let totalDebt = 0;
-                appData.installments.forEach(item => {
+                window.appData.installments.forEach(item => {
                     let ta = parseFloat(item.totalAmount)||0, mo = parseFloat(item.monthlyAmount)||0, pa = parseInt(item.paidCount)||0;
                     totalDebt += Math.max(0, ta - (mo*pa));
                 });
-                appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount)||0);
-                appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount)||0);
+                window.appData.cards.forEach(item => totalDebt += parseFloat(item.requiredAmount)||0);
+                window.appData.scheduledDebts.forEach(item => totalDebt += parseFloat(item.amount)||0);
                 let now = new Date();
                 let monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
                 history = [{month: monthKey, value: netWorth - totalDebt}];
@@ -1509,7 +2053,7 @@ const firebaseConfig = {
             if (chartInstanceNetWorth) chartInstanceNetWorth.destroy();
             chartInstanceNetWorth = new Chart(ctx, {
                 type: 'line',
-                data: { labels: history.map(h=>h.month), datasets: [{ label: 'صافي الثروة (ج)', data: history.map(h=>h.value), borderColor: '#6c5ce7', backgroundColor: 'rgba(108,92,231,0.1)', tension:0.4, fill:true, pointBackgroundColor:'#6c5ce7', pointBorderColor:'#fff', pointHoverRadius:8, pointRadius:5, borderWidth:3 }] },
+                data: { labels: history.map(h=>h.month), datasets: [{ label: `صافي الأصول والسيولة (${getCurrency()})`, data: history.map(h=>h.value), borderColor: '#6c5ce7', backgroundColor: 'rgba(108,92,231,0.1)', tension:0.4, fill:true, pointBackgroundColor:'#6c5ce7', pointBorderColor:'#fff', pointHoverRadius:8, pointRadius:5, borderWidth:3 }] },
                 options: { responsive:true, plugins:{legend:{labels:{color:labelColor, font:{family:'Cairo'}}}}, scales:{y:{ticks:{color:labelColor, font:{family:'Cairo'}}, grid:{color:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)'}}, x:{ticks:{color:labelColor, font:{family:'Cairo'}}, grid:{display:false}}}}
             });
         }
@@ -1522,101 +2066,135 @@ const firebaseConfig = {
             if (chartInstanceBar) chartInstanceBar.destroy();
             if (chartInstanceDoughnut) chartInstanceDoughnut.destroy();
             chartInstanceBar = new Chart(ctxBar, {
-                type:'bar', data:{labels:['إجمالي الدخل','التزامات الفترة'], datasets:[{data:[income, outAll], backgroundColor:['#00b894','#e17055'], borderRadius:8, borderWidth:0}]},
+                type:'bar', data:{labels:['إجمالي الدخل المخطط','التزامات الفترة الكلية'], datasets:[{data:[income, outAll], backgroundColor:['#00b894','#e17055'], borderRadius:8, borderWidth:0}]},
                 options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{color:labelColor}},x:{ticks:{color:labelColor}}}}
             });
             chartInstanceDoughnut = new Chart(ctxDoughnut, {
-                type:'doughnut', data:{labels:['الأقساط','المصروفات','الكروت والديون'], datasets:[{data:[inst, rec, crd], backgroundColor:['#6c5ce7','#74b9ff','#fdcb6e'], borderColor:isDark?'#1a1825':'#ffffff', borderWidth:3}]},
+                type:'doughnut', data:{labels:['الأقساط','المصروفات','الكروت والديون المجدولة'], datasets:[{data:[inst, rec, crd], backgroundColor:['#6c5ce7','#74b9ff','#fdcb6e'], borderColor:isDark?'#1a1825':'#ffffff', borderWidth:3}]},
                 options:{responsive:true, cutout:'65%', plugins:{legend:{labels:{color:labelColor, font:{family:'Cairo'}}}}}
             });
         }
 
+        // ======================== MUTATIVE WRITE ACTIONS ========================
         function incrementInstallment(idx) {
-            if ((parseInt(appData.installments[idx].paidCount)||0) < (parseInt(appData.installments[idx].totalCount)||0)) {
-                appData.installments[idx].paidCount = (parseInt(appData.installments[idx].paidCount)||0)+1;
-                backupDataLocally(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview();
+            if (!checkActionPermission('write')) return;
+            if ((parseInt(window.appData.installments[idx].paidCount)||0) < (parseInt(window.appData.installments[idx].totalCount)||0)) {
+                window.appData.installments[idx].paidCount = (parseInt(window.appData.installments[idx].paidCount)||0)+1;
+                backupDataLocally(); 
+                renderAllModulesTables(); 
+                calculateFinanceReport(); 
+                calculateGlobalOverview();
             }
         }
+        window.incrementInstallment = incrementInstallment;
 
         function clearCardDebt(idx) {
-            showCustomConfirm("تم سداد مديونية الكارت؟", () => {
-                appData.cards.splice(idx,1); backupDataLocally(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview();
+            if (!checkActionPermission('write')) return;
+            showCustomConfirm("هل قمت بالفعل بسداد مديونية الكارت بالكامل للبنك لحماية ميزانيتك؟", () => {
+                window.appData.cards.splice(idx,1); 
+                backupDataLocally(); 
+                renderAllModulesTables(); 
+                calculateFinanceReport(); 
+                calculateGlobalOverview();
             });
         }
+        window.clearCardDebt = clearCardDebt;
 
         function quickDepositSavings(idx) {
-            showCustomPrompt("أدخل القيمة أو الوزن الجديد المتوفر حالياً:", "", (val) => {
+            if (!checkActionPermission('write')) return;
+            showCustomPrompt("أدخل الرصيد المالي المحدث كلياً أو وزن الجرامات الجديد حالياً:", window.appData.savings[idx].currentAmount, (val) => {
                 if (val && !isNaN(val)) {
-                    appData.savings[idx].currentAmount = parseFloat(val);
-                    backupDataLocally(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview();
+                    window.appData.savings[idx].currentAmount = parseFloat(val);
+                    backupDataLocally(); 
+                    renderAllModulesTables(); 
+                    calculateFinanceReport(); 
+                    calculateGlobalOverview();
                 }
             });
         }
+        window.quickDepositSavings = quickDepositSavings;
 
         function deleteModuleItem(type, idx) {
-            showCustomConfirm("حذف هذا البند نهائياً؟", () => {
-                if (type==='installment') appData.installments.splice(idx,1);
-                else if (type==='recurring') appData.recurring.splice(idx,1);
-                else if (type==='card') appData.cards.splice(idx,1);
-                else if (type==='income') appData.income.splice(idx,1);
-                else if (type==='savings') appData.savings.splice(idx,1);
-                else if (type==='scheduledDebt') appData.scheduledDebts.splice(idx,1);
-                backupDataLocally(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview();
+            if (!checkActionPermission('write')) return;
+            showCustomConfirm("هل تود بالتأكيد حذف هذا البند المالي نهائياً؟ لن تظهر إشعاراته لاحقاً.", () => {
+                if (type==='installment') window.appData.installments.splice(idx,1);
+                else if (type==='recurring') window.appData.recurring.splice(idx,1);
+                else if (type==='card') window.appData.cards.splice(idx,1);
+                else if (type==='income') window.appData.income.splice(idx,1);
+                else if (type==='savings') window.appData.savings.splice(idx,1);
+                else if (type==='scheduledDebt') window.appData.scheduledDebts.splice(idx,1);
+                
+                backupDataLocally(); 
+                renderAllModulesTables(); 
+                calculateFinanceReport(); 
+                calculateGlobalOverview();
             });
         }
+        window.deleteModuleItem = deleteModuleItem;
 
+        // ======================== DIALOGS AND FORMS ========================
         function showFormModal(type, editIndex=null) {
+            if (!checkActionPermission('write')) return;
+
             currentEditType = type; currentEditIndex = editIndex;
             let isEdit = editIndex!==null;
             document.getElementById('formModalTitle').textContent = isEdit?'تعديل البيانات الحالية':'إضافة بيان جديد';
             let body = document.getElementById('formModalBody'); body.innerHTML = '';
+            
             if (type==='installment') {
-                let item = isEdit?appData.installments[editIndex]:{};
+                let item = isEdit?window.appData.installments[editIndex]:{};
                 body.innerHTML = `<input type="text" id="in_ent" class="form-control mb-2" placeholder="الجهة / اسم القسط" value="${item.entity||''}"><input type="number" id="in_tot" class="form-control mb-2" placeholder="المبلغ الإجمالي الكلي" value="${item.totalAmount||''}"><input type="number" id="in_mon" class="form-control mb-2" placeholder="قيمة القسط الشهري" value="${item.monthlyAmount||''}"><input type="number" id="in_cnt" class="form-control mb-2" placeholder="عدد الشهور الإجمالي" value="${item.totalCount||''}"><input type="number" id="in_pad" class="form-control mb-2" placeholder="عدد الشهور المدفوعة سابقاً" value="${item.paidCount||0}"><label class="small text-muted">تاريخ استحقاق أول قسط:</label><input type="date" id="in_str" class="form-control" value="${item.startDate||''}">`;
             } else if (type==='recurring') {
-                let item = isEdit?appData.recurring[editIndex]:{};
+                let item = isEdit?window.appData.recurring[editIndex]:{};
                 body.innerHTML = `<input type="text" id="re_cat" class="form-control mb-2" placeholder="فئة المصروف" value="${item.category||''}"><input type="number" id="re_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}"><input type="number" id="re_day" class="form-control" placeholder="يوم الاستحقاق" value="${item.day||''}">`;
             } else if (type==='card') {
-                let item = isEdit?appData.cards[editIndex]:{};
-                body.innerHTML = `<input type="text" id="ca_bnk" class="form-control mb-2" placeholder="اسم البنك" value="${item.bank||''}"><input type="text" id="ca_nam" class="form-control mb-2" placeholder="نوع الكارت" value="${item.cardName||''}"><input type="number" id="ca_req" class="form-control mb-2" placeholder="المبلغ المطلوب" value="${item.requiredAmount||''}"><label class="small text-muted">تاريخ الشراء:</label><input type="date" id="ca_pdt" class="form-control" value="${item.purchaseDate||''}">`;
+                let item = isEdit?window.appData.cards[editIndex]:{};
+                body.innerHTML = `<input type="text" id="ca_bnk" class="form-control mb-2" placeholder="اسم البنك" value="${item.bank||''}"><input type="text" id="ca_nam" class="form-control mb-2" placeholder="نوع الكارت" value="${item.cardName||''}"><input type="number" id="ca_req" class="form-control mb-2" placeholder="المبلغ المطلوب" value="${item.requiredAmount||''}"><label class="small text-muted">تاريخ حركة الشراء الفعلي:</label><input type="date" id="ca_pdt" class="form-control" value="${item.purchaseDate||''}">`;
             } else if (type==='income') {
-                let item = isEdit?appData.income[editIndex]:{};
+                let item = isEdit?window.appData.income[editIndex]:{};
                 body.innerHTML = `<input type="text" id="inc_src" class="form-control mb-2" placeholder="مصدر الدخل" value="${item.source||''}"><input type="number" id="inc_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}"><input type="number" id="inc_day" class="form-control" placeholder="يوم الاستلام" value="${item.day||''}">`;
             } else if (type==='savings') {
-                let item = isEdit?appData.savings[editIndex]:{};
-                body.innerHTML = `<label class="small fw-bold mb-1">نوع الأصل:</label><select id="sav_type" class="form-select mb-2" onchange="adjustSavingsInputs()"><option value="cash" ${item.assetType==='cash'?'selected':''}>💵 كاش</option><option value="gold" ${item.assetType==='gold'?'selected':''}>🟡 ذهب</option><option value="silver" ${item.assetType==='silver'?'selected':''}>⚪ فضة</option></select><input type="text" id="sav_nam" class="form-control mb-2" placeholder="اسم الصندوق" value="${item.goalName||''}"><input type="number" id="sav_cur" class="form-control mb-2" placeholder="الرصيد الحالي" value="${item.currentAmount||0}"><input type="number" id="sav_tgt" class="form-control mb-2" placeholder="المستهدف" value="${item.targetAmount||0}"><div id="sav_extra_fields"></div>`;
+                let item = isEdit?window.appData.savings[editIndex]:{};
+                body.innerHTML = `<label class="small fw-bold mb-1">نوع الأصل المالي:</label><select id="sav_type" class="form-select mb-2" onchange="adjustSavingsInputs()"><option value="cash" ${item.assetType==='cash'?'selected':''}>💵 كاش مالي</option><option value="gold" ${item.assetType==='gold'?'selected':''}>🟡 ذهب مادي</option><option value="silver" ${item.assetType==='silver'?'selected':''}>⚪ فضة مادية</option></select><input type="text" id="sav_nam" class="form-control mb-2" placeholder="اسم الصندوق" value="${item.goalName||''}"><input type="number" id="sav_cur" class="form-control mb-2" placeholder="الرصيد أو الوزن الحالي بالجرامات" value="${item.currentAmount||0}"><input type="number" id="sav_tgt" class="form-control mb-2" placeholder="المستهدف (إذا كان صندوقاً)" value="${item.targetAmount||0}"><div id="sav_extra_fields"></div>`;
                 setTimeout(adjustSavingsInputs, 50);
             } else if (type==='scheduledDebt') {
-                let item = isEdit?appData.scheduledDebts[editIndex]:{};
-                body.innerHTML = `<input type="text" id="sd_desc" class="form-control mb-2" placeholder="وصف الدين" value="${item.description||''}"><input type="number" id="sd_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}"><label class="small text-muted">تاريخ الاستحقاق:</label><input type="date" id="sd_date" class="form-control mb-2" value="${item.dueDate||''}"><textarea id="sd_notes" class="form-control" rows="2" placeholder="ملاحظات">${item.notes||''}</textarea>`;
+                let item = isEdit?window.appData.scheduledDebts[editIndex]:{};
+                body.innerHTML = `<input type="text" id="sd_desc" class="form-control mb-2" placeholder="وصف الدين والالتزام" value="${item.description||''}"><input type="number" id="sd_amt" class="form-control mb-2" placeholder="المبلغ" value="${item.amount||''}"><label class="small text-muted">تاريخ الاستحقاق الدقيق:</label><input type="date" id="sd_date" class="form-control mb-2" value="${item.dueDate||''}"><textarea id="sd_notes" class="form-control" rows="2" placeholder="ملاحظات وتفاصيل إضافية">${item.notes||''}</textarea>`;
             }
             document.getElementById('formModalSubmitBtn').onclick = processFormSubmit;
             new bootstrap.Modal(document.getElementById('formModal')).show();
         }
+        window.showFormModal = showFormModal;
 
         function adjustSavingsInputs() {
             let type = document.getElementById('sav_type')?.value;
             let extraDiv = document.getElementById('sav_extra_fields');
+            if (!extraDiv) return;
+            
             if (type==='gold') {
-                let karatVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].karat||24) : 24;
-                let priceVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].currentPricePerGram||'') : '';
-                let purchaseVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].purchasePrice||'') : '';
-                let pdateVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].purchaseDate||'') : '';
-                extraDiv.innerHTML = `<label class="small text-muted">عيار الذهب:</label><select id="sav_karat" class="form-select mb-2"><option value="24" ${karatVal==24?'selected':''}>24</option><option value="21" ${karatVal==21?'selected':''}>21</option><option value="18" ${karatVal==18?'selected':''}>18</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي" value="${purchaseVal}"><label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
+                let karatVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].karat||24) : 24;
+                let priceVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].currentPricePerGram||'') : '';
+                let purchaseVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].purchasePrice||'') : '';
+                let pdateVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].purchaseDate||'') : '';
+                extraDiv.innerHTML = `<label class="small text-muted">عيار الذهب:</label><select id="sav_karat" class="form-select mb-2"><option value="24" ${karatVal==24?'selected':''}>24</option><option value="21" ${karatVal==21?'selected':''}>21</option><option value="18" ${karatVal==18?'selected':''}>18</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي للتحديث اللحظي" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي" value="${purchaseVal}"><label class="small text-muted">تاريخ حيازة المعدن:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
             } else if (type==='silver') {
-                let purityVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].silverPurity||'999') : '999';
-                let priceVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].currentPricePerGram||'') : '';
-                let purchaseVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].purchasePrice||'') : '';
-                let pdateVal = (currentEditIndex!==null && appData.savings[currentEditIndex]) ? (appData.savings[currentEditIndex].purchaseDate||'') : '';
-                extraDiv.innerHTML = `<label class="small text-muted">عيار الفضة:</label><select id="sav_purity" class="form-select mb-2"><option value="999" ${purityVal=='999'?'selected':''}>999</option><option value="925" ${purityVal=='925'?'selected':''}>925</option><option value="900" ${purityVal=='900'?'selected':''}>900</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي" value="${purchaseVal}"><label class="small text-muted">تاريخ الحيازة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
+                let purityVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].silverPurity||'999') : '999';
+                let priceVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].currentPricePerGram||'') : '';
+                let purchaseVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].purchasePrice||'') : '';
+                let pdateVal = (currentEditIndex!==null && window.appData.savings[currentEditIndex]) ? (window.appData.savings[currentEditIndex].purchaseDate||'') : '';
+                extraDiv.innerHTML = `<label class="small text-muted">عيار الفضة:</label><select id="sav_purity" class="form-select mb-2"><option value="999" ${purityVal=='999'?'selected':''}>999</option><option value="925" ${purityVal=='925'?'selected':''}>925</option><option value="900" ${purityVal=='900'?'selected':''}>900</option></select><input type="number" id="sav_price_gram" class="form-control mb-2" placeholder="سعر الجرام الحالي للتحديث اللحظي" value="${priceVal}"><input type="number" id="sav_purchase" class="form-control mb-2" placeholder="ثمن الشراء الإجمالي" value="${purchaseVal}"><label class="small text-muted">تاريخ حيازة الفضة:</label><input type="date" id="sav_pdate" class="form-control" value="${pdateVal}">`;
             } else {
                 extraDiv.innerHTML = '';
             }
         }
+        window.adjustSavingsInputs = adjustSavingsInputs;
 
         function editModuleItem(type, idx) { showFormModal(type, idx); }
+        window.editModuleItem = editModuleItem;
 
         function processFormSubmit() {
+            if (!checkActionPermission('write')) return;
+
             let type = currentEditType, idx = currentEditIndex, isEdit = idx!==null, obj = {};
             const isEmptyOrZero = v => v===null||v===undefined||v===''||String(v).trim()===''||Number(v)===0;
             const showErr = m => showCustomAlert(m, 'تنبيه');
@@ -1647,8 +2225,9 @@ const firebaseConfig = {
                     let assetType = document.getElementById('sav_type')?.value||'cash',
                         goalName = document.getElementById('sav_nam')?.value?.trim()||'',
                         currentAmount = parseFloat(document.getElementById('sav_cur')?.value)||0;
-                    if (isEmptyOrZero(goalName)) { showErr('اسم الصندوق أو الأصل مطلوب!'); return; }
+                    if (isEmptyOrZero(goalName)) { showErr('اسم الصندوق أو الأصل المالي مطلوب!'); return; }
                     obj = { assetType, goalName, currentAmount, targetAmount: parseFloat(document.getElementById('sav_tgt')?.value)||0 };
+                    
                     if (assetType==='gold') {
                         obj.karat = parseInt(document.getElementById('sav_karat')?.value)||24;
                         obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')?.value)||0;
@@ -1659,8 +2238,6 @@ const firebaseConfig = {
                         obj.currentPricePerGram = parseFloat(document.getElementById('sav_price_gram')?.value)||0;
                         obj.purchasePrice = parseFloat(document.getElementById('sav_purchase')?.value)||0;
                         obj.purchaseDate = document.getElementById('sav_pdate')?.value||'';
-                    } else {
-                        obj.karat=null; obj.silverPurity=null; obj.currentPricePerGram=null; obj.purchasePrice=null; obj.purchaseDate=null;
                     }
                 } else if (type==='scheduledDebt') {
                     let description = document.getElementById('sd_desc')?.value?.trim()||'', amount = parseFloat(document.getElementById('sd_amt')?.value)||0,
@@ -1668,56 +2245,135 @@ const firebaseConfig = {
                     if (isEmptyOrZero(description)||isEmptyOrZero(amount)||isEmptyOrZero(dueDate)) { showErr('بيانات الدين المجدول غير مكتملة!'); return; }
                     obj = { description, amount, dueDate, notes };
                 }
+
                 if (isEdit) {
-                    if (type==='installment') appData.installments[idx]=obj;
-                    else if (type==='recurring') appData.recurring[idx]=obj;
-                    else if (type==='card') appData.cards[idx]=obj;
-                    else if (type==='income') appData.income[idx]=obj;
-                    else if (type==='savings') appData.savings[idx]=obj;
-                    else if (type==='scheduledDebt') appData.scheduledDebts[idx]=obj;
+                    if (type==='installment') window.appData.installments[idx]=obj;
+                    else if (type==='recurring') window.appData.recurring[idx]=obj;
+                    else if (type==='card') window.appData.cards[idx]=obj;
+                    else if (type==='income') window.appData.income[idx]=obj;
+                    else if (type==='savings') window.appData.savings[idx]=obj;
+                    else if (type==='scheduledDebt') window.appData.scheduledDebts[idx]=obj;
                 } else {
-                    if (type==='installment') appData.installments.push(obj);
-                    else if (type==='recurring') appData.recurring.push(obj);
-                    else if (type==='card') appData.cards.push(obj);
-                    else if (type==='income') appData.income.push(obj);
-                    else if (type==='savings') appData.savings.push(obj);
-                    else if (type==='scheduledDebt') appData.scheduledDebts.push(obj);
+                    if (type==='installment') window.appData.installments.push(obj);
+                    else if (type==='recurring') window.appData.recurring.push(obj);
+                    else if (type==='card') window.appData.cards.push(obj);
+                    else if (type==='income') window.appData.income.push(obj);
+                    else if (type==='savings') window.appData.savings.push(obj);
+                    else if (type==='scheduledDebt') window.appData.scheduledDebts.push(obj);
                 }
-                backupDataLocally(); renderAllModulesTables(); calculateFinanceReport(); calculateGlobalOverview();
+
+                backupDataLocally(); 
+                renderAllModulesTables(); 
+                calculateFinanceReport(); 
+                calculateGlobalOverview();
                 bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
-            } catch(e) { console.error(e); showCustomAlert('حدث خطأ أثناء الحفظ'); }
+            } catch(e) { 
+                console.error(e); 
+                showCustomAlert('حدث خطأ فني أثناء الحفظ'); 
+            }
         }
 
         function saveMemoData() {
-            appData.memo = document.getElementById('memoTextarea').value;
+            if (!checkActionPermission('write')) return;
+            window.appData.memo = document.getElementById('memoTextarea').value;
             backupDataLocally();
-            document.getElementById('memoAlertText').textContent = '✅ تم حفظ الملاحظات!';
+            document.getElementById('memoAlertText').textContent = '✅ تم حفظ الملاحظات والمسودة المكتوبة!';
             setTimeout(() => document.getElementById('memoAlertText').textContent = '', 2500);
         }
+        window.saveMemoData = saveMemoData;
 
-        function loadMemoData() { document.getElementById('memoTextarea').value = appData.memo || ''; }
+        function loadMemoData() { 
+            let el = document.getElementById('memoTextarea');
+            if (el) el.value = window.appData.memo || ''; 
+        }
+        window.loadMemoData = loadMemoData;
 
         function exportDataJSON() {
-            let blob = new Blob([JSON.stringify(appData, null, 2)], {type:'application/json'});
+            let blob = new Blob([JSON.stringify(window.appData, null, 2)], {type:'application/json'});
             let a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = `EgyUp_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
             lastExportTime = Date.now(); localStorage.setItem('egyup_last_export_time', lastExportTime);
         }
+        window.exportDataJSON = exportDataJSON;
 
         function importDataJSON(event) {
+            if (!checkActionPermission('write')) return;
             let reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     let parsed = JSON.parse(e.target.result);
                     if (validateImportData(parsed)) {
-                        if (typeof parsed.memo === 'string') appData = parsed;
-                        else { let currentMemo = appData.memo||''; appData = parsed; appData.memo = currentMemo; }
-                        backupDataLocally(); renderAllModulesTables(); renderGoals(); calculateFinanceReport(); calculateGlobalOverview(); loadMemoData();
-                        showCustomAlert('✅ تم استيراد البيانات بنجاح ومزامنتها سحابياً!', 'نجاح');
+                        if (typeof parsed.memo === 'string') window.appData = parsed;
+                        else { let currentMemo = window.appData.memo||''; window.appData = parsed; window.appData.memo = currentMemo; }
+                        backupDataLocally(); 
+                        renderAllModulesTables(); 
+                        renderGoals(); 
+                        calculateFinanceReport(); 
+                        calculateGlobalOverview(); 
+                        loadMemoData();
+                        showCustomAlert('✅ تم استيراد البيانات ومزامنتها بنجاح مع السحابية!', 'نجاح');
                     } else showCustomAlert('⚠️ الملف غير متوافق أو تالف.', 'خطأ');
                 } catch(err) { showCustomAlert('الملف غير صالح للاستيراد.', 'خطأ'); }
             };
             reader.readAsText(event.target.files[0]);
+        }
+        window.importDataJSON = importDataJSON;
+
+        function filterTable(type) {
+            let sid='', tid='';
+            if (type==='installments') { sid='searchInstallments'; tid='installmentsTableBody'; }
+            else if (type==='recurring') { sid='searchRecurring'; tid='recurringTableBody'; }
+            else if (type==='cards') { sid='searchCards'; tid='cardsTableBody'; }
+            else if (type==='income') { sid='searchIncome'; tid='incomeTableBody'; }
+            else if (type==='savings') { sid='searchSavings'; tid='savingsTableBody'; }
+            else if (type==='scheduledDebts') { sid='searchScheduledDebts'; tid='scheduledDebtsTableBody'; }
+            if (!sid || !tid) return;
+            let q = document.getElementById(sid).value.toLowerCase();
+            let rows = document.getElementById(tid).getElementsByTagName('tr');
+            for (let r of rows) r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+        }
+        window.filterTable = filterTable;
+
+        function initializeApp() {
+            let now = new Date();
+            document.getElementById('filterMonth').value = now.getMonth() + 1;
+            document.getElementById('filterYear').value = now.getFullYear();
+            
+            let raw = localStorage.getItem('egyup_raw_data_v2');
+            if (raw) {
+                try { window.appData = JSON.parse(raw); } catch(e){}
+            }
+
+            renderAllModulesTables();
+            renderGoals();
+            calculateFinanceReport();
+            calculateGlobalOverview();
+            loadMemoData();
+            updateNetWorthHistory();
+            initNotifications(); 
+            
+            // اختيار نصيحة عشوائية ذكية
+            const tips = [
+                "الادخار ليس ما يتبقى بعد الإنفاق، بل الإنفاق هو ما يتبقى بعد الادخار.",
+                "تجنب شراء الأشياء التي لا تحتاجها لتثير إعجاب أشخاص لا تحبهم.",
+                "ابدأ ببناء صندوق الطوارئ أولاً ليغطي مصروفاتك لـ 3 إلى 6 أشهر.",
+                "استثمر في الذهب أو الأصول المادية دائمًا لحفظ قيمة مدخراتك من التضخم.",
+                "حاول دائمًا خفض نسبة ديونك الشهرية لأقل من 40% من دخلك الإجمالي.",
+                "تتبع كل قرش تصرفه؛ فالتسريبات الصغيرة قادرة على إغراق أكبر السفن!"
+            ];
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            const tipEl = document.getElementById('financialTipText');
+            if (tipEl) tipEl.textContent = randomTip;
+
+            setTimeout(() => { new bootstrap.Modal(document.getElementById('prayerModal')).show(); }, 600);
+        }
+
+        function initNotifications() {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                updateNotificationBadge();
+                startNotificationChecker();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1730,10 +2386,13 @@ const firebaseConfig = {
             });
             let savedTheme = localStorage.getItem('egyup_theme_choice')||'light';
             document.documentElement.setAttribute('data-bs-theme', savedTheme);
-            document.getElementById('darkModeBtn').innerHTML = savedTheme==='dark'?'<i class="bi bi-sun-fill text-warning"></i>':'<i class="bi bi-moon-fill"></i>';
-            lastExportTime = parseInt(localStorage.getItem('egyup_last_export_time'))||null;
+            let darkBtn = document.getElementById('darkModeBtn');
+            if (darkBtn) {
+                darkBtn.innerHTML = savedTheme==='dark'?'<i class="bi bi-sun-fill text-warning"></i>':'<i class="bi bi-moon-fill"></i>';
+            }
             initializeApp();
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
